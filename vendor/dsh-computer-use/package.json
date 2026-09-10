@@ -1,6 +1,6 @@
 {
   "name": "@milkuovo/dsh-computer-use",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Codex Computer Use for DeepSeek Harness on Windows: screenshot + UI Automation tree + mouse/keyboard actions, aligned with the official 10-method Codex Computer Use tool surface. Includes a zero-dependency stdio MCP server.",
   "type": "module",
   "main": "lib/index.js",
@@ -43,9 +43,9 @@
     "mcp"
   ],
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.1",
-    "@deepseek-ai/schemastery": "^3.18.1",
-    "@deepseek-ai/dsh-tools": "^0.1.0-rc.2"
+    "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/schemastery": "^3.18.2",
+    "@deepseek-ai/dsh-tools": "^0.1.2-rc.1"
   },
   "engines": {
     "node": ">=18"

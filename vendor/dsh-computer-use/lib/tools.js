@@ -324,8 +324,10 @@ export function buildTools(ctx, session, config = {}) {
     const elements = session.state?.elements ?? [];
     // Only button-like elements may host a snap: marker quantization is a few
     // pixels, but a huge interactive container (video player, page background
-    // click-through) would snap the click to ITS center — a click in the
-    // middle of the screen far from the marker. Cap by min dimension.
+    // click-through) would snap the click to ITS center — a click far from the
+    // marker. Two independent caps: min dimension excludes huge containers;
+    // center distance excludes wide/narrow rows whose center sits far from the
+    // marker (snapping those would drag the click sideways).
     const w = session.state?.window?.bounds;
     const cap = w
       ? Math.max(140, Math.round(0.18 * Math.min(w.width, w.height)))
@@ -342,6 +344,7 @@ export function buildTools(ctx, session, config = {}) {
       if (!interactive) continue;
       const f = el.frame;
       if (!f || cx < f.x || cx > f.x + f.width || cy < f.y || cy > f.y + f.height) continue;
+      if (Math.min(f.width, f.height) > cap) continue;
       const centerX = f.x + f.width / 2;
       const centerY = f.y + f.height / 2;
       if (Math.hypot(centerX - cx, centerY - cy) > cap) continue;

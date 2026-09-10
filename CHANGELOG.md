@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.4 — 2026-09-10
+
+- 内置 Computer Use 升级到 `@milkuovo/dsh-computer-use@0.2.1`（此前内置 0.2.0）。
+- Computer Use 去重守卫改为在 `Config` 校验通过后才占用：非法配置不再把进程级守卫永久留在已占用状态，后续重试不会被"已激活"挡掉。
+- Computer Use 标记吸附增加最小边长上限：只有尺寸合理的控件才能承载吸附，避免把点击吸附到视频播放器、页面背景这类大容器的中心而偏离标记。
+- Computer Use 的 peerDependencies 对齐 DSH 0.1.2+（cordis `^4.0.2`、schemastery `^3.18.2`、dsh-tools `^0.1.2-rc.1`）。
+- Mimi 自身代码与动作素材与 0.6.3 相同（DSH 0.1.5 `assistant-stream` 适配已在 0.6.3 完成）。
+
 ## 0.6.3 — 2026-09-10
 
 - 适配 DeepSeek Harness `0.1.5-rc.1`：`session/follow` 请求显式开启 `assistantStream`。DSH 0.1.5 起实时 assistant 增量改为 opt-in，不开启时桌宠只能看到工具事件而收不到流式文本与思考。

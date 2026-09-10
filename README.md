@@ -6,7 +6,7 @@
 
 - npm：<https://www.npmjs.com/package/mimi-desktop-pet>
 - GitHub：<https://github.com/mekos2772/dsh-plugin-mimi>
-- 当前版本：`0.6.3`
+- 当前版本：`0.6.4`
 - 已验证 DSH：`0.1.5-rc.1`（认证、Remote RPC / Remote mux 与 `assistant-stream`）
 
 ## 安装
@@ -22,21 +22,21 @@ npm install -g pnpm
 
 ```bash
 # dsh web 使用 web profile
-dsh plugin --profile web add mimi-desktop-pet@0.6.3
+dsh plugin --profile web add mimi-desktop-pet@0.6.4
 
 # 若使用单独的 desktop profile
-dsh plugin --profile desktop add mimi-desktop-pet@0.6.3
+dsh plugin --profile desktop add mimi-desktop-pet@0.6.4
 ```
 
 若 npm 镜像尚未同步，可直接从 GitHub 标签安装：
 
 ```bash
-dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.3
+dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.4
 ```
 
 重启 DSH 后生效。DSH 会自动把声明了 `dsh.bundle.patch` 的包加入 profile；无需手工修改 `cordis.patch.yml`。
 
-> DSH 仍处于 developer preview，RC 版本可能发生不兼容变化。Mimi 0.6.3 已实测 DSH `0.1.5-rc.1` 的认证、基础 RPC、Remote mux、`assistant-stream`、工具注册、插件生命周期，以及 Computer Use 的观察/操作/验证闭环。
+> DSH 仍处于 developer preview，RC 版本可能发生不兼容变化。Mimi 0.6.4 已实测 DSH `0.1.5-rc.1` 的认证、基础 RPC、Remote mux、`assistant-stream`、工具注册、插件生命周期，以及 Computer Use 的观察/操作/验证闭环。
 
 ## DSH 0.1.5 适配更新
 
@@ -55,9 +55,9 @@ dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.3
 - 桌宠模型选择与回复摘要模型保持独立；模型目录、reasoning effort 和服务端拒绝均有对应处理。
 - 本机已验证 DSH 0.1.2 环境下的 Computer Use 观察、点击、操作后观察闭环。
 
-## 0.6.3 功能内容
+## 0.6.4 功能内容
 
-- 内置 Computer Use 0.2.0：窗口截图 + UI Automation 树，支持观察、点击、控件操作、填写、选择文字、滚动、拖动、按键和输入，不需要再单独安装。
+- 内置 Computer Use 0.2.1：窗口截图 + UI Automation 树，支持观察、点击、控件操作、填写、选择文字、滚动、拖动、按键和输入，不需要再单独安装。
 - 强制“观察 → 动作 → 验证”闭环：每次动作后旧快照立即失效，避免拿旧坐标或旧控件索引连续误操作。
 - 多窗口绑定：支持进程名、标题、PID 与 HWND；同一浏览器的多个窗口不会在连续操作中串窗。
 - Mimi 气泡会显示“观察界面 / 点击 / 输入 / 滚动”等中文动作和目标应用，不显示输入的隐私文本。
@@ -114,7 +114,7 @@ $env:PYTHONPATH = (Resolve-Path .\mimi_app\src).Path
 python -m pytest .\mimi_app\tests -q
 
 python .\scripts\build_dsh_package.py
-dsh plugin --profile web add .\release\mimi-desktop-pet-0.6.3.tgz
+dsh plugin --profile web add .\release\mimi-desktop-pet-0.6.4.tgz
 dsh web --dump-config
 ```
 
