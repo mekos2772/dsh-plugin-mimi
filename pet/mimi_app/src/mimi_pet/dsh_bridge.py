@@ -1,12 +1,18 @@
 """DSH (DeepSeek Harness) integration bridge.
 
-DSH 0.1.2 uses the Remote protocol:
+DSH 0.1.2+ uses the Remote protocol:
 
 * unary calls are POST ``/api/<namespace>/<method>`` with ``payload.args``;
 * all logical streams share the ``/api/remote.mux`` WebSocket;
 * ``$events`` carries forwarded status/question/approval events;
 * ``session/control`` carries jobs and ``session/follow`` carries durable
   session events.
+
+DSH 0.1.5 replaced the durable ``chunkrow/*`` records with opt-in live
+``assistant-stream`` frames (``session/follow`` request gains
+``assistantStream: true``); the compact ``text-chunks``/``reasoning-chunks``/
+``tool-call-chunks`` records survive inside ``assistant/attempt`` events.
+This bridge decodes both generations.
 
 The Qt side intentionally keeps its small, legacy ``DshEvent`` vocabulary.
 This module is the protocol adapter between that vocabulary and DSH Remote.
@@ -483,6 +489,8 @@ class DshEventThread:
         self._desired_sessions: set[str] = set()
         self._client_id = ""
         self._seen_sequences: dict[str, set[int]] = {}
+        # Active DSH 0.1.5 assistant-stream attempt per followed session.
+        self._live_attempts: dict[str, dict[str, Any]] = {}
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -556,6 +564,10 @@ class DshEventThread:
                     "request": {
                         "address": {"kind": "session", "sessionId": session_id},
                         "maxMessages": 100,
+                        # DSH 0.1.5: live assistant chunks only arrive when
+                        # opted in; without this the pet sees tool events but
+                        # no streamed text/reasoning deltas.
+                        "assistantStream": True,
                     }
                 },
             )
@@ -657,7 +669,18 @@ class DshEventThread:
                         elif stream_id == "control":
                             self._decode_control_value(value)
                         elif stream_id.startswith("follow:"):
-                            self._decode_follow_value(stream_id.removeprefix("follow:"), value)
+                            session_id = stream_id.removeprefix("follow:")
+                            if isinstance(value, dict) and value.get("type") == "assistant-stream":
+                                self._decode_assistant_stream_frame(session_id, value.get("frame"))
+                            else:
+                                self._decode_follow_value(session_id, value)
+                    elif frame_type == "assistant-stream":
+                        # Compatibility with early 0.1.5 test adapters that
+                        # promoted the logical frame to the mux envelope.
+                        if stream_id.startswith("follow:"):
+                            self._decode_assistant_stream_frame(
+                                stream_id.removeprefix("follow:"), frame.get("frame")
+                            )
                     elif frame_type == "error":
                         error = frame.get("error") or {}
                         message = str(error.get("message") or "remote stream failed")
@@ -808,9 +831,15 @@ class DshEventThread:
         if not isinstance(value, dict):
             return
         if value.get("type") == "snapshot":
+            assistant_stream = value.get("assistantStream")
+            if isinstance(assistant_stream, dict):
+                self._seed_assistant_stream_baseline(session_id, assistant_stream)
             records = value.get("records") or []
         elif value.get("type") == "event" and isinstance(value.get("event"), dict):
             records = [value]
+        elif value.get("type") == "assistant-stream":
+            self._decode_assistant_stream_frame(session_id, value.get("frame"))
+            return
         else:
             return
         for record in records:
@@ -826,14 +855,135 @@ class DshEventThread:
             data = event.get("data")
             if not isinstance(data, dict):
                 data = {}
+            event_type = str(event.get("type") or "")
             self._put(
                 "session/event",
                 {
                     "sessionId": session_id,
-                    "event": {"type": str(event.get("type") or ""), "data": data},
+                    "event": {"type": event_type, "data": data},
                 },
                 seq=event.get("seq"),
             )
+            # A durable assistant/attempt carries the compact stream used by
+            # reconnecting readers. Expand it into the same legacy chunk
+            # events as the live assistant-stream path.
+            if event_type == "assistant/attempt":
+                self._decode_assistant_attempt_stream(session_id, data)
+
+    def _seed_assistant_stream_baseline(self, session_id: str, baseline: dict[str, Any]) -> None:
+        attempt = baseline.get("activeAttempt")
+        if not isinstance(attempt, dict):
+            self._live_attempts.pop(session_id, None)
+            return
+        attempt_id = str(attempt.get("attemptId") or "")
+        if not attempt_id:
+            self._live_attempts.pop(session_id, None)
+            return
+        self._live_attempts[session_id] = {
+            "attemptId": attempt_id,
+            "turn": attempt.get("turn", 0),
+            "step": attempt.get("step", 0),
+            "nextIndex": int(attempt.get("nextIndex", 0) or 0),
+        }
+        for raw in attempt.get("stream") or []:
+            if not isinstance(raw, dict):
+                continue
+            for chunk in self._expand_assistant_record(raw):
+                self._put_assistant_chunk(session_id, self._live_attempts[session_id], chunk)
+
+    @staticmethod
+    def _expand_assistant_record(record: dict[str, Any]) -> list[dict[str, Any]]:
+        row_type = str(record.get("type") or "")
+        if row_type == "chunk":
+            chunk = record.get("chunk")
+            return [chunk] if isinstance(chunk, dict) else []
+        if row_type in ("text-chunks", "reasoning-chunks"):
+            texts = record.get("texts") or []
+            chunk_type = "text-delta" if row_type == "text-chunks" else "reasoning-delta"
+            return [
+                {"type": chunk_type, "index": record.get("index", 0), "text": str(text)}
+                for text in texts
+            ]
+        if row_type == "tool-call-chunks":
+            args = record.get("args") or []
+            common = {
+                "type": "tool-call-delta",
+                "index": record.get("index", 0),
+                "id": str(record.get("id") or ""),
+            }
+            if "name" in record:
+                common["name"] = str(record.get("name") or "")
+            return [{**common, "argumentsDelta": str(arg)} for arg in args]
+        return []
+
+    def _decode_assistant_attempt_stream(self, session_id: str, data: dict[str, Any]) -> None:
+        state = {
+            "attemptId": f"durable:{session_id}:{data.get('turn', 0)}:{data.get('step', 0)}",
+            "turn": data.get("turn", 0),
+            "step": data.get("step", 0),
+        }
+        for raw in data.get("stream") or []:
+            if not isinstance(raw, dict):
+                continue
+            for chunk in self._expand_assistant_record(raw):
+                self._put_assistant_chunk(session_id, state, chunk)
+
+    def _put_assistant_chunk(self, session_id: str, state: dict[str, Any], chunk: dict[str, Any]) -> None:
+        self._put(
+            "session/event",
+            {
+                "sessionId": session_id,
+                "event": {
+                    "type": "assistant/chunk",
+                    "data": {
+                        "turn": state.get("turn", 0),
+                        "step": state.get("step", 0),
+                        "chunk": chunk,
+                    },
+                },
+            },
+        )
+
+    def _decode_assistant_stream_frame(self, session_id: str, frame: Any) -> None:
+        """Decode DSH 0.1.5 follow-stream assistant frames.
+
+        The Gateway wraps these as ``item.value = {type: assistant-stream,
+        frame: ...}``. Chunk frames inherit turn/step from the matching start
+        frame (the wire chunk itself only contains the expanded StreamChunk).
+        """
+        if not isinstance(frame, dict):
+            return
+        frame_type = str(frame.get("type") or "")
+        state = self._live_attempts.get(session_id)
+        if frame_type == "start":
+            attempt_id = str(frame.get("attemptId") or "")
+            if not attempt_id:
+                return
+            self._live_attempts[session_id] = {
+                "attemptId": attempt_id,
+                "turn": frame.get("turn", 0),
+                "step": frame.get("step", 0),
+                "nextIndex": 0,
+            }
+            return
+        if state is None:
+            return
+        if str(frame.get("attemptId") or "") != state.get("attemptId"):
+            return
+        if frame_type == "chunk":
+            chunk = frame.get("chunk")
+            if not isinstance(chunk, dict):
+                return
+            try:
+                index = int(frame.get("index", state.get("nextIndex", 0)))
+            except (TypeError, ValueError):
+                index = int(state.get("nextIndex", 0))
+            if index < int(state.get("nextIndex", 0)):
+                return
+            state["nextIndex"] = index + 1
+            self._put_assistant_chunk(session_id, state, chunk)
+        elif frame_type == "end":
+            self._live_attempts.pop(session_id, None)
 
     def _decode_chunk_row(self, session_id: str, event: Any) -> None:
         if not isinstance(event, dict):

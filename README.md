@@ -6,15 +6,15 @@
 
 - npm：<https://www.npmjs.com/package/mimi-desktop-pet>
 - GitHub：<https://github.com/mekos2772/dsh-plugin-mimi>
-- 当前版本：`0.6.1`
-- 已验证 DSH：`0.1.2-rc.1`（新版认证、Remote RPC 与 Remote mux）
+- 当前版本：`0.6.3`
+- 已验证 DSH：`0.1.5-rc.1`（认证、Remote RPC / Remote mux 与 `assistant-stream`）
 
 ## 安装
 
 先安装最新版 DSH 与 pnpm：
 
 ```bash
-npm install -g @deepseek-ai/dsh@0.1.2-rc.1
+npm install -g @deepseek-ai/dsh@0.1.5-rc.1
 npm install -g pnpm
 ```
 
@@ -22,21 +22,29 @@ npm install -g pnpm
 
 ```bash
 # dsh web 使用 web profile
-dsh plugin --profile web add mimi-desktop-pet@0.6.1
+dsh plugin --profile web add mimi-desktop-pet@0.6.3
 
 # 若使用单独的 desktop profile
-dsh plugin --profile desktop add mimi-desktop-pet@0.6.1
+dsh plugin --profile desktop add mimi-desktop-pet@0.6.3
 ```
 
 若 npm 镜像尚未同步，可直接从 GitHub 标签安装：
 
 ```bash
-dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.1
+dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.3
 ```
 
 重启 DSH 后生效。DSH 会自动把声明了 `dsh.bundle.patch` 的包加入 profile；无需手工修改 `cordis.patch.yml`。
 
-> DSH 仍处于 developer preview，RC 版本可能发生不兼容变化。Mimi 0.6.1 已实测 DSH `0.1.2-rc.1` 的认证、基础 RPC、Remote mux、工具注册、插件生命周期，以及 Computer Use 的观察/操作/验证闭环。
+> DSH 仍处于 developer preview，RC 版本可能发生不兼容变化。Mimi 0.6.3 已实测 DSH `0.1.5-rc.1` 的认证、基础 RPC、Remote mux、`assistant-stream`、工具注册、插件生命周期，以及 Computer Use 的观察/操作/验证闭环。
+
+## DSH 0.1.5 适配更新
+
+- DSH 0.1.5 起 `session/follow` 的实时 assistant 增量改为 opt-in：请求中不带 `assistantStream: true` 时，Agent 只会推送工具与生命周期事件，正文和思考的流式增量不再到达。Mimi 现在显式开启该开关。
+- 新增 `assistant-stream` 帧解码（`start` / `chunk` / `end`）：`chunk` 继承对应 `start` 的 turn 与 step，按 attemptId 与 index 去重，仍在同一个 `assistant/chunk` 事件族里交给桌宠消费。
+- 持久化 `assistant/attempt` 中携带的紧凑流（`text-chunks`、`reasoning-chunks`、`tool-call-chunks`、`chunk`）在桥接层展开成 `text-delta`、`reasoning-delta`、`tool-call-delta`，follow 重连回放 baseline 时内容不丢。
+- 旧版 chunkrow 紧凑记录解码路径保留，DSH 0.1.2 及更早的会话记录仍可正常回放。
+- 本机已在 DSH `0.1.5-rc.1` + `dsh web` 下完成实机验证：插件树加载、桌宠子进程启动、Computer Use 注册、认证 RPC 与会话事件链路正常。
 
 ## DSH 0.1.2 适配更新
 
@@ -47,7 +55,7 @@ dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.1
 - 桌宠模型选择与回复摘要模型保持独立；模型目录、reasoning effort 和服务端拒绝均有对应处理。
 - 本机已验证 DSH 0.1.2 环境下的 Computer Use 观察、点击、操作后观察闭环。
 
-## 0.6.1 功能内容
+## 0.6.3 功能内容
 
 - 内置 Computer Use 0.2.0：窗口截图 + UI Automation 树，支持观察、点击、控件操作、填写、选择文字、滚动、拖动、按键和输入，不需要再单独安装。
 - 强制“观察 → 动作 → 验证”闭环：每次动作后旧快照立即失效，避免拿旧坐标或旧控件索引连续误操作。
@@ -95,7 +103,7 @@ DSH 设置中的命名空间为 `mimiPet`：
 ## 环境与体积
 
 - Windows 10/11
-- Node.js 18+（DSH 0.1.2-rc.1 实测环境为 Node.js 24）
+- Node.js 18+（DSH 0.1.5-rc.1 实测环境为 Node.js 24）
 - Python 3.11+ 与 PySide6 6.x
 - npm 包自带 `mimi_app` 与运行时素材；若配置 `petDir`，会优先运行本地项目版本。
 
@@ -106,7 +114,7 @@ $env:PYTHONPATH = (Resolve-Path .\mimi_app\src).Path
 python -m pytest .\mimi_app\tests -q
 
 python .\scripts\build_dsh_package.py
-dsh plugin --profile web add .\release\mimi-desktop-pet-0.6.1.tgz
+dsh plugin --profile web add .\release\mimi-desktop-pet-0.6.3.tgz
 dsh web --dump-config
 ```
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.3 — 2026-09-10
+
+- 适配 DeepSeek Harness `0.1.5-rc.1`：`session/follow` 请求显式开启 `assistantStream`。DSH 0.1.5 起实时 assistant 增量改为 opt-in，不开启时桌宠只能看到工具事件而收不到流式文本与思考。
+- 新增 `assistant-stream` 帧解码：处理 `start` / `chunk` / `end`，`chunk` 从对应 `start` 继承 turn/step，按 attemptId 与 index 去重，并保留旧 chunkrow 紧凑记录兼容路径。
+- 持久化 `assistant/attempt` 内的紧凑流（`text-chunks`、`reasoning-chunks`、`tool-call-chunks`、`chunk`）展开回 `assistant/chunk` 的 `text-delta`、`reasoning-delta`、`tool-call-delta`，follow 重连的 baseline 回放不再丢内容。
+- 已在 DSH `0.1.5-rc.1` + `dsh web` 实机验证：插件树加载、桌宠子进程 spawn、Computer Use 工具注册、认证 RPC 与 Remote mux 事件链路全部正常。
+- 内置 Computer Use `0.2.0` 与动作素材不变；258 项 Python 测试通过（bridge 与 remote mux 回归 52 项）。
+
 ## 0.6.2 — 2026-09-05
 
 - 代码审查修复：双击可唤醒睡眠中的桌宠（原守卫顺序令该分支不可达，与文档承诺不符），并补回归测试。
