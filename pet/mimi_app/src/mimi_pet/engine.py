@@ -231,6 +231,10 @@ class PetEngine:
         # Placement mode: docked (default) falls back to the desk bottom;
         # free placement keeps the character where it was released.
         self.free_placement = False
+        self.quiet_mode = False
+        self.focus_companion = False
+        self.companion_busy = False
+        self._companion_seated = False
 
     # ------------------------------------------------------------- relationship
 
@@ -522,6 +526,8 @@ class PetEngine:
         return True
 
     def try_random_performance(self, now_s: float, random_value: float | None = None) -> bool:
+        if self.quiet_mode or self.focus_companion:
+            return False
         if self.states.state is not PetState.IDLE:
             return False
         if now_s - self.scheduler.last_performance_s < self.scheduler.cooldown_s:
@@ -620,12 +626,37 @@ class PetEngine:
     def idle_seconds(self, now_s: float) -> float:
         return max(0.0, now_s - self._last_input_s)
 
+    def set_companion_mode(self, focusing: bool, quiet: bool, *, busy: bool = False) -> None:
+        """Apply a local accompaniment intent without replacing user actions."""
+        was_focusing = self.focus_companion
+        was_quiet = self.quiet_mode
+        self.focus_companion = bool(focusing)
+        self.quiet_mode = bool(quiet)
+        self.companion_busy = bool(busy)
+        if quiet and not was_quiet:
+            self.stop_walk()
+        if focusing and not was_focusing and self.states.state is PetState.SLEEPING:
+            self.wake_up()
+        if was_focusing and not focusing:
+            if self._companion_seated and self.is_sitting:
+                self.stand_up()
+            self._companion_seated = False
+            self.note_input(self.now_s)
+
+    def companion_check(self) -> bool:
+        if self.focus_companion and not self.companion_busy and self.states.state is PetState.IDLE:
+            self._companion_seated = self.start_sit()
+            return self._companion_seated
+        return False
+
     def scenario_check(self, now_s: float, random_value: float | None = None) -> bool:
         """Idle rest ladder: walk → sit → sleep (config-driven thresholds).
 
         Sitting persists until interrupted; a long enough sit escalates to
         sleep. Waking/standing is interaction-driven, never scenario-driven.
         """
+        if self.focus_companion:
+            return self.companion_check()
         state = self.states.state
         if state is PetState.SLEEPING:
             return False
@@ -648,7 +679,8 @@ class PetEngine:
             return self.start_sit()
         value = random.random() if random_value is None else random_value
         if (
-            idle >= self.autonomous_walk_idle_min_s
+            not self.quiet_mode
+            and idle >= self.autonomous_walk_idle_min_s
             and value < self.autonomous_walk_probability
         ):
             direction = random.choice(("left", "right"))
@@ -708,6 +740,8 @@ class PetEngine:
         """
         self.note_input(self.now_s)
         if self.states.state is not PetState.IDLE:
+            return False
+        if self.quiet_mode or self.focus_companion:
             return False
         if away_s < self.welcome_back_after_s:
             return False

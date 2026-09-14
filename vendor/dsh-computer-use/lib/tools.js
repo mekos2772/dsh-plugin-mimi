@@ -373,6 +373,7 @@ export function buildTools(ctx, session, config = {}) {
       async execute(args, exec) {
         const startedAt = Date.now();
         try {
+          exec?.signal?.throwIfAborted();
           const result = await tool.execute(args, exec);
           auditToolCall({
             method: tool.name,
@@ -399,7 +400,8 @@ export function buildTools(ctx, session, config = {}) {
   }
 
   /** Run the pointer motion before and during the real interaction. */
-  async function withPointerMotion(kind, targets, execute, { pulse = kind === 'click', interactionIndex } = {}) {
+  async function withPointerMotion(kind, targets, execute, { pulse = kind === 'click', interactionIndex, signal } = {}) {
+    signal?.throwIfAborted();
     const validTargets = targets.filter((p) => p && Number.isFinite(p.x) && Number.isFinite(p.y));
     // Keep duplicate waypoints: for a drag, index 1 is the press point even when
     // the previous cursor position already equals that point.
@@ -417,8 +419,20 @@ export function buildTools(ctx, session, config = {}) {
         })
       : null;
 
-    if (motion) await motion.arrived;
+    let onAbort;
     try {
+      if (motion) {
+        if (signal) {
+          const aborted = new Promise((_, reject) => {
+            onAbort = () => reject(signal.reason ?? new Error('computer use action aborted'));
+            signal.addEventListener('abort', onAbort, { once: true });
+          });
+          await Promise.race([motion.arrived, aborted]);
+        } else {
+          await motion.arrived;
+        }
+      }
+      signal?.throwIfAborted();
       // When the overlay is running it owns hiding the system cursor for the
       // whole animation; otherwise uia.ps1 hides it around the real input.
       const pendingResult = execute(motion);
@@ -432,7 +446,10 @@ export function buildTools(ctx, session, config = {}) {
       return result;
     } catch (error) {
       motion?.cancel();
+      if (motion && signal?.aborted) endOverlaySession();
       throw error;
+    } finally {
+      if (onAbort) signal.removeEventListener('abort', onAbort);
     }
   }
 
@@ -477,7 +494,7 @@ export function buildTools(ctx, session, config = {}) {
       },
       isConcurrencySafe: () => true,
       async execute(args, exec) {
-        return invokePowerShell({ action: 'list_apps', signal: exec?.signal });
+        return invokePowerShell({ action: 'list_apps' }, { signal: exec?.signal });
       },
     },
 
@@ -550,14 +567,13 @@ export function buildTools(ctx, session, config = {}) {
           action: 'get_state',
           app: args.app,
           hwnd: continuationHwnd,
-          signal: exec?.signal,
           maxDepth,
           maxNodes,
           includeScreenshot,
           fx: fxPayload(),
           annotate: { grid: annotateGrid, lastPoint: annotateLastPoint, activate: annotateActivate, displayWidth: 1024 },
           lastPoint: continuationHwnd ? session.lastScreenPoint ?? null : null,
-        });
+        }, { signal: exec?.signal });
         session.store(result, args.app);
         // Kernel markers are capture pixels — stored as-is, never rescaled by
         // modelScale (click({marker}) maps them straight through toScreenPoint).
@@ -695,7 +711,6 @@ export function buildTools(ctx, session, config = {}) {
         return runMutation(() => withPointerMotion('click', [target], (motion) => invokePowerShell({
             action: 'click',
             app: args.app,
-            signal: exec?.signal,
             path,
             snapshot_hwnd: session.state?.window?.hwnd ?? null,
             click_count: args.click_count ?? 1,
@@ -703,7 +718,7 @@ export function buildTools(ctx, session, config = {}) {
             x: kernelPoint ? kernelPoint.x : modelCoordinate(args.x),
             y: kernelPoint ? kernelPoint.y : modelCoordinate(args.y),
             hide_cursor: !motion,
-          }).then((result) => (snapNote ? { ...result, note: snapNote } : result)), { pulse: true }));
+          }, { signal: exec?.signal }).then((result) => (snapNote ? { ...result, note: snapNote } : result)), { pulse: true, signal: exec?.signal }));
       },
       presentCall: () => pendingCall('click'),
     },
@@ -738,11 +753,10 @@ export function buildTools(ctx, session, config = {}) {
         return runMutation(() => withPointerMotion('perform_secondary_action', [elementPoint(args.element_index)], () => invokePowerShell({
           action: 'perform_secondary_action',
           app: args.app,
-          signal: exec?.signal,
           path,
           snapshot_hwnd: session.state?.window?.hwnd ?? null,
           secondary_action: args.action,
-        }), { pulse: false }));
+        }, { signal: exec?.signal }), { pulse: false, signal: exec?.signal }));
       },
     },
 
@@ -773,8 +787,8 @@ export function buildTools(ctx, session, config = {}) {
         const path = session.requireElement(args.element_index, 'set_value').path;
         await requireApproval(ctx, exec, 'set_value', `Set value of element ${args.element_index} in ${args.app}`);
         return runMutation(() => withPointerMotion('set_value', [elementPoint(args.element_index)], () => invokePowerShell({
-          action: 'set_value', app: args.app, path, value: args.value, signal: exec?.signal, snapshot_hwnd: session.state?.window?.hwnd ?? null,
-        }), { pulse: false }));
+          action: 'set_value', app: args.app, path, value: args.value, snapshot_hwnd: session.state?.window?.hwnd ?? null,
+        }, { signal: exec?.signal }), { pulse: false, signal: exec?.signal }));
       },
     },
 
@@ -816,14 +830,13 @@ export function buildTools(ctx, session, config = {}) {
         return runMutation(() => withPointerMotion('select_text', [elementPoint(args.element_index)], () => invokePowerShell({
             action: 'select_text',
             app: args.app,
-            signal: exec?.signal,
             path,
             snapshot_hwnd: session.state?.window?.hwnd ?? null,
             text: args.text,
             prefix: args.prefix,
             suffix: args.suffix,
             selection: args.selection ?? 'text',
-          }), { pulse: false }));
+          }, { signal: exec?.signal }), { pulse: false, signal: exec?.signal }));
       },
     },
 
@@ -874,7 +887,6 @@ export function buildTools(ctx, session, config = {}) {
         return runMutation(() => withPointerMotion('scroll', [target], (motion) => invokePowerShell({
             action: 'scroll',
             app: args.app,
-            signal: exec?.signal,
             path,
             snapshot_hwnd: session.state?.window?.hwnd ?? null,
             direction: args.direction,
@@ -882,7 +894,7 @@ export function buildTools(ctx, session, config = {}) {
             x: modelCoordinate(args.x),
             y: modelCoordinate(args.y),
             hide_cursor: !motion,
-          }), { pulse: false }));
+          }, { signal: exec?.signal }), { pulse: false, signal: exec?.signal }));
       },
     },
 
@@ -920,14 +932,13 @@ export function buildTools(ctx, session, config = {}) {
         return runMutation(() => withPointerMotion('drag', [dragStart, dragEnd], (motion) => invokePowerShell({
             action: 'drag',
             app: args.app,
-            signal: exec?.signal,
             snapshot_hwnd: session.state?.window?.hwnd ?? null,
             from_x: modelCoordinate(args.from_x),
             from_y: modelCoordinate(args.from_y),
             to_x: modelCoordinate(args.to_x),
             to_y: modelCoordinate(args.to_y),
             hide_cursor: !motion,
-          }), { pulse: false, interactionIndex: 1 }));
+          }, { signal: exec?.signal }), { pulse: false, interactionIndex: 1, signal: exec?.signal }));
       },
     },
 
@@ -958,9 +969,9 @@ export function buildTools(ctx, session, config = {}) {
         requireFreshSnapshot(args.app, 'press_key');
         await requireApproval(ctx, exec, 'press_key', `Press ${args.key} in ${args.app}`);
         return runMutation(() => invokePowerShell({
-          action: 'press_key', app: args.app, key: args.key, signal: exec?.signal,
+          action: 'press_key', app: args.app, key: args.key,
           snapshot_hwnd: session.state?.window?.hwnd ?? null,
-        }));
+        }, { signal: exec?.signal }));
       },
     },
 
@@ -989,9 +1000,9 @@ export function buildTools(ctx, session, config = {}) {
         requireFreshSnapshot(args.app, 'type_text');
         await requireApproval(ctx, exec, 'type_text', `Type ${JSON.stringify(args.text)} into ${args.app}`);
         return runMutation(() => invokePowerShell({
-          action: 'type_text', app: args.app, text: args.text, signal: exec?.signal,
+          action: 'type_text', app: args.app, text: args.text,
           snapshot_hwnd: session.state?.window?.hwnd ?? null,
-        }));
+        }, { signal: exec?.signal }));
       },
     },
   ].map(defineTool).map(withAudit);

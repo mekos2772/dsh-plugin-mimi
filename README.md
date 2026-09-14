@@ -1,128 +1,76 @@
-# 鲸鱼娘 Mimi — DeepSeek Harness 桌面宠物
+# Mimi — DeepSeek Harness 桌宠插件
 
-`mimi-desktop-pet` 是一个标准的 DeepSeek Harness（DSH）桌面宠物插件：会在 DSH 启动时自动唤醒 Mimi。她不只是播放动画：会跟随 DSH 的思考、工具调用、提问、完成与失败状态做出动作，并把回复显示成头顶气泡；也可以切换到独立的「Mimi 管家」会话，直接从桌面输入中文任务。
+Mimi 随 DSH 启动，跟随工作会话显示思考、工具调用、提问与回复，也支持桌宠聊天。专注、勿扰和一次性提醒统一放在 **DSH 会话顶部 Mimi → 右侧面板**，不创建独立管理窗口。
 
-本仓库使用 `dsh-plugin-mimi` 作为 GitHub 项目名，并加入 `dsh-plugin` 主题；Computer Use 既作为 Mimi 的内置附属能力提供，也单独发布为 `@milkuovo/dsh-computer-use`。
-
+- 本地开发版本：`0.7.0`，尚未发布。
+- 当前交接状态：源码与后端检查已完成，DSH 中的 Mimi 入口和面板交互仍待界面验收。
+- 本轮验证使用本机已有 DSH `0.1.5-rc.1`、Node.js 24、Python 3.11 和 PySide6 6.11.1。
+- 已有 DSH 的用户直接沿用当前安装，无需为这组功能另装一套 DSH。
 - npm：<https://www.npmjs.com/package/mimi-desktop-pet>
-- GitHub：<https://github.com/mekos2772/dsh-plugin-mimi>
-- 当前版本：`0.6.4`
-- 已验证 DSH：`0.1.5-rc.1`（认证、Remote RPC / Remote mux 与 `assistant-stream`）
+- 源码：<https://github.com/mekos2772/dsh-plugin-mimi>
 
-## 安装
+## DSH 内嵌专注与提醒
 
-先安装最新版 DSH 与 pnpm：
+打开一个 DSH 会话，点击顶部 **Mimi**，或在右侧面板的新标签引导页选择 Mimi。
 
-```bash
-npm install -g @deepseek-ai/dsh@0.1.5-rc.1
-npm install -g pnpm
-```
-
-再把 Mimi 装进实际使用的 profile：
-
-```bash
-# dsh web 使用 web profile
-dsh plugin --profile web add mimi-desktop-pet@0.6.4
-
-# 若使用单独的 desktop profile
-dsh plugin --profile desktop add mimi-desktop-pet@0.6.4
-```
-
-若 npm 镜像尚未同步，可直接从 GitHub 标签安装：
-
-```bash
-dsh plugin --profile web add github:mekos2772/dsh-plugin-mimi#v0.6.4
-```
-
-重启 DSH 后生效。DSH 会自动把声明了 `dsh.bundle.patch` 的包加入 profile；无需手工修改 `cordis.patch.yml`。
-
-> DSH 仍处于 developer preview，RC 版本可能发生不兼容变化。Mimi 0.6.4 已实测 DSH `0.1.5-rc.1` 的认证、基础 RPC、Remote mux、`assistant-stream`、工具注册、插件生命周期，以及 Computer Use 的观察/操作/验证闭环。
-
-## DSH 0.1.5 适配更新
-
-- DSH 0.1.5 起 `session/follow` 的实时 assistant 增量改为 opt-in：请求中不带 `assistantStream: true` 时，Agent 只会推送工具与生命周期事件，正文和思考的流式增量不再到达。Mimi 现在显式开启该开关。
-- 新增 `assistant-stream` 帧解码（`start` / `chunk` / `end`）：`chunk` 继承对应 `start` 的 turn 与 step，按 attemptId 与 index 去重，仍在同一个 `assistant/chunk` 事件族里交给桌宠消费。
-- 持久化 `assistant/attempt` 中携带的紧凑流（`text-chunks`、`reasoning-chunks`、`tool-call-chunks`、`chunk`）在桥接层展开成 `text-delta`、`reasoning-delta`、`tool-call-delta`，follow 重连回放 baseline 时内容不丢。
-- 旧版 chunkrow 紧凑记录解码路径保留，DSH 0.1.2 及更早的会话记录仍可正常回放。
-- 本机已在 DSH `0.1.5-rc.1` + `dsh web` 下完成实机验证：插件树加载、桌宠子进程启动、Computer Use 注册、认证 RPC 与会话事件链路正常。
-
-## DSH 0.1.2 适配更新
-
-- 适配 DSH `0.1.2-rc.1`：通过 `authenticatedUrl` 完成 Python 端一次性 token exchange，后续请求使用内存中的 signed cookie。
-- 统一新版 Remote RPC：方法使用 slash endpoint，参数放入 `payload.args`，并补齐 session/model 相关参数形状。
-- 接入 `remote.mux` 的 `$events`、`session/control` 和 `session/follow` 流；等待 `ready` 后才报告连接成功，并支持 follow 重连去重。
-- 修正工作模式的 session 目标稳定性：固定用户选择，发送前同步 follow 目标，避免跨项目回复串线。
-- 桌宠模型选择与回复摘要模型保持独立；模型目录、reasoning effort 和服务端拒绝均有对应处理。
-- 本机已验证 DSH 0.1.2 环境下的 Computer Use 观察、点击、操作后观察闭环。
-
-## 0.6.4 功能内容
-
-- 内置 Computer Use 0.2.1：窗口截图 + UI Automation 树，支持观察、点击、控件操作、填写、选择文字、滚动、拖动、按键和输入，不需要再单独安装。
-- 强制“观察 → 动作 → 验证”闭环：每次动作后旧快照立即失效，避免拿旧坐标或旧控件索引连续误操作。
-- 多窗口绑定：支持进程名、标题、PID 与 HWND；同一浏览器的多个窗口不会在连续操作中串窗。
-- Mimi 气泡会显示“观察界面 / 点击 / 输入 / 滚动”等中文动作和目标应用，不显示输入的隐私文本。
-- 好感度系统：桌宠模式会分析正向问候、感谢、关心和陪伴等聊天内容，小幅提升关系阶段；90 秒冷却、每日 3 点额度和同文指纹防止刷分。工作模式、工具调用和任务结果不会改变好感度。
-
-- 23 套经过筛选的核心完整帧动作；移除 57 套旧库中重复、低密度或视觉不一致的动作。
-- Live Rig v5：呼吸、眨眼、微笑、张嘴、独立虹膜视线追踪，角色与正式动作使用同一母版。
-- DSH 联动：思考、工具执行、倾听、点头、庆祝、失败六类专用动作。
-- 头顶白色气泡：回复、摘要、提问与状态统一呈现，带去重和自动消散。
-- 白色中文输入框：支持 Windows 拼音 IME，输入期间冻结窗口跟随。
-- 两种 Harness 模式：跟随当前项目会话，或使用归档的独立「Mimi 管家」Agent。
-- 桌宠交互：五分区触摸、组合反应、拖拽/落地、拖放投喂、久坐久睡场景链、欢迎回来。
-- 单实例保护：手动启动与 DSH 自动启动不会生成两个 Mimi。
-- 发布包改用透明 WebP Q95 素材，在保留帧数和时长的前提下显著缩小体积。
-
-## 操作
-
-| 操作 | Mimi 的反应 |
+| 操作 | 行为 |
 |---|---|
-| 摸头、戳脸、挠肚子、碰手或脚 | 按角色部位播放不同反应 |
-| 摸头后 3 秒内击掌 | 组合庆祝 |
-| 拖动角色 | 依据方向与速度实时倾斜，释放后落地恢复 |
-| 拖入图片 | 作为面包投喂；饱腹时会拒绝 |
-| 拖入文件或文本 | 接取文件并交给桌宠交互层 |
-| DSH 思考/调用工具/提问/完成 | 自动切换对应动作和气泡 |
-| 点击气泡或右键打开 Harness | 聚焦中文输入框，可直接发送任务 |
+| 开始专注 | 默认 25 分钟，可设置 1–240 分钟；支持暂停、继续、取消和 5 分钟休息 |
+| 勿扰 | 减少自主走动和普通工具提示；保留正常回复、待回答及待批准入口 |
+| 一句话安排 | 例如“陪我专注 25 分钟”“20 分钟后提醒我喝水”“明天 18:00 提醒我下班” |
+| 提醒 | 添加、修改、完成、取消、稍后 10 分钟；到期后仍保留在待处理列表 |
+| 最近通知 | 查看专注和提醒记录；气泡消散后仍可找回 |
+| 桌宠右键或陪伴气泡 | 请求 DSH 打开 Mimi 面板；不弹出另一个窗口 |
 
-## 配置
+这些操作在本机计算，不消耗模型调用。连接 DSH 后，桌宠模式输入框也识别明确的陪伴指令；工作模式中的文字仍发送到当前工作会话。
 
-DSH 设置中的命名空间为 `mimiPet`：
+专注开始默认开启本次勿扰；暂停、取消或结束后恢复原来的独立勿扰设置。Windows 锁屏、休眠以及重启恢复后保持暂停，由用户手动继续。DSH 退出或插件卸载会保存并关闭桌宠；关闭期间不提供后台提醒，下次启动补记未送达的到期事项。
 
-| 字段 | 说明 |
+## 原有桌宠能力
+
+- 23 套正式动作、Live Rig v5、视线跟随、呼吸、眨眼和微笑。
+- 分区触摸、摸头后击掌、投喂、拖拽/落地、久坐久睡和欢迎回来。
+- DSH 工作会话跟随和独立桌宠会话；头顶气泡、中文输入框及模型选择。
+- 内置 Computer Use `0.2.1`：窗口观察、点击、输入、按键、滚动与拖动，沿用操作后重新观察的规则。
+- 好感度只来自既有桌宠互动和受限的正向聊天；工作任务、专注、休息和提醒均不加减好感度。
+
+## 设置与已有配置
+
+DSH 设置中的命名空间为 **`mimi-pet`**。设置更改后重启插件或 DSH，同一插件生命周期内宿主和桌宠使用同一组配置。
+
+| 字段 | 默认值与说明 |
 |---|---|
-| `enabled` | 是否随 DSH 启动 Mimi，默认 `true` |
-| `petDir` | 可选的本地完整项目目录；留空时优先使用包内 `pet/` |
-| `python` | `pythonw.exe` 完整路径；留空自动探测 Python 3.11 |
-| `scale` | 桌宠缩放百分比，范围 1–200 |
-| `computerUseEnabled` | 是否启用 Windows 界面操作，默认 `true` |
-| `computerUseAskBeforeActions` | 是否每个界面动作都请求 DSH 批准，默认 `false` |
-| `computerUseScreenshot` | 观察时是否附带窗口截图，默认 `true` |
-| `computerUseGrid` | 是否在截图显示编号点选标记，默认 `true` |
+| `enabled` | `true`，随 DSH 启动和退出 Mimi |
+| `companionEnabled` | `true`，启用内嵌专注与提醒 |
+| `focusMinutes` | `25`，默认专注时长，范围 1–240 分钟 |
+| `petDir` | 空，优先使用插件内 `pet/`；可显式指向现有本地项目 |
+| `python` | 空，自动探测 `pythonw.exe`；可指定已安装解释器的完整路径 |
+| `scale` | `100`，桌宠缩放百分比，范围 1–200 |
+| `computerUseEnabled` | `true`，启用 Windows 界面操作 |
+| `computerUseAskBeforeActions` | `false`，是否每个界面动作都请求 DSH 批准 |
+| `computerUseScreenshot` | `true`，观察时附带窗口截图 |
+| `computerUseGrid` | `true`，截图显示编号点选标记 |
 
-## 环境与体积
+旧版使用的 `mimiPet` 不符合 DSH 0.1.5 的命名规则。本版不删除、覆盖或自动迁移旧设置；原 bundle 的 entry config 仍作为基础配置。如果曾在 `mimiPet` 中自定义关闭能力、Python 路径、缩放等，应在启用更新前把对应字段复制到 `mimi-pet`，保留原配置作为备份。新的 `mimi-pet` 用户设置优先于 entry config。
 
-- Windows 10/11
-- Node.js 18+（DSH 0.1.5-rc.1 实测环境为 Node.js 24）
-- Python 3.11+ 与 PySide6 6.x
-- npm 包自带 `mimi_app` 与运行时素材；若配置 `petDir`，会优先运行本地项目版本。
+陪伴数据位于 `%APPDATA%\MimiDesktopPet\companion.json`，独立于好感度和 DSH 会话数据，支持原子保存及损坏备份。
 
 ## 本地开发与验证
 
+在仓库根目录复用现有 Python、Node 和 DSH 依赖运行检查；这些命令不安装软件或修改已使用的 DSH profile：
+
 ```powershell
-$env:PYTHONPATH = (Resolve-Path .\mimi_app\src).Path
-python -m pytest .\mimi_app\tests -q
-
-python .\scripts\build_dsh_package.py
-dsh plugin --profile web add .\release\mimi-desktop-pet-0.6.4.tgz
-dsh web --dump-config
+$env:QT_QPA_PLATFORM='offscreen'
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD='1'
+python -X utf8 -m pytest mimi_app/tests -q
+node --test dsh-plugin-mimi/test/runtime.test.mjs dsh-plugin-mimi/test/client.test.mjs
+node --experimental-loader ./scripts/dsh_sdk_loader.mjs scripts/verify_dsh_integration.mjs dsh-plugin-mimi/lib/index.js vendor/dsh-computer-use/lib/index.js
+python -X utf8 tools/smoke_companion.py
 ```
 
-## 卸载
+需要本地交付包时，在仓库根目录运行 `python scripts/build_dsh_package.py --out reports/companion-20260914/package`。打包只生成本地 `.tgz`，不安装、不发布。包内含宿主、DSH 客户端、Python 运行时及正式素材；不含用户状态或缓存。
 
-```bash
-dsh plugin --profile web remove mimi-desktop-pet
-```
+详细使用和验证边界在仓库的 `docs/MIMI_COMPANION_FEATURES.md` 与 `reports/companion-20260914/VALIDATION.md`。本轮真实接口验证不等同于全部模型、多项目和系统休眠场景均已验证。
 
 ## 许可
 

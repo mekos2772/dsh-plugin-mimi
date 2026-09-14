@@ -23,38 +23,56 @@ from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 MAX_BUBBLES = 3
 DEFAULT_LIFETIME_S = 6.0
-BUBBLE_MAX_W = 300.0
+BUBBLE_MAX_W = 340.0
 BUBBLE_PAD_X = 11.0
 BUBBLE_PAD_Y = 7.0
 BUBBLE_TAIL_H = 7.0
-MAX_LINES = 3
+MAX_LINES = 6
 
 ACCENTS = {
     # waiting for the user: same orange the capsule uses
     "question": QColor(0xFF, 0x9F, 0x43),
     # reply summary: teal
     "summary": QColor(0x5F, 0xD3, 0xB0),
+    "companion": QColor(0x5F, 0x86, 0xED),
 }
 
 
 def _wrap(text: str, metrics: QFontMetrics, max_width: int) -> list[str]:
-    """Greedy per-character wrap (CJK-safe); capped at MAX_LINES."""
+    """Greedy wrap to ``max_width``, honouring explicit newlines.
+
+    CJK text has no spaces, so wrapping is per character. Explicit ``"\\n"``
+    starts a new line, as does a paragraph that no longer fits. At most
+    ``MAX_LINES`` lines are kept; anything past that is dropped and the final
+    line ends in an ellipsis so the bubble stays honest about the cut.
+    """
     lines: list[str] = []
-    current = ""
-    for ch in text:
-        if metrics.horizontalAdvance(current + ch) > max_width and current:
-            lines.append(current)
-            current = ch
-            if len(lines) == MAX_LINES:
-                break
-        else:
-            current += ch
-    if len(lines) < MAX_LINES and current:
+    clipped = False
+    paragraphs = text.split("\n")
+    for index, paragraph in enumerate(paragraphs):
+        if len(lines) == MAX_LINES:
+            clipped = True
+            break
+        current = ""
+        for ch in paragraph:
+            if current and metrics.horizontalAdvance(current + ch) > max_width:
+                lines.append(current)
+                current = ch
+                if len(lines) == MAX_LINES:
+                    break
+            else:
+                current += ch
+        if len(lines) == MAX_LINES:
+            # `current` still holds a character that never made it to a line,
+            # and any later paragraph is dropped as well.
+            clipped = bool(current) or index < len(paragraphs) - 1
+            break
         lines.append(current)
-    # Ellipsis when the wrap hit the line cap before consuming everything.
-    consumed = sum(len(line) for line in lines)
-    if consumed < len(text) and lines:
-        lines[-1] = lines[-1][: max(1, len(lines[-1]) - 1)] + "…"
+    if clipped and lines:
+        tail = lines[-1]
+        while tail and metrics.horizontalAdvance(tail + "…") > max_width:
+            tail = tail[:-1]
+        lines[-1] = tail + "…"
     return lines or [""]
 
 
@@ -168,6 +186,7 @@ class BubbleLayer(QWidget):
     """Stack of transient bubbles floating above the pet's head."""
 
     message_clicked = Signal()
+    companion_clicked = Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -197,9 +216,11 @@ class BubbleLayer(QWidget):
             return
         chip = BubbleChip(text, kind, lifetime_s)
         chip.expired.connect(self._drop)
-        chip.clicked.connect(self.message_clicked)
+        chip.clicked.connect(self.companion_clicked if kind == "companion" else self.message_clicked)
         self._chips.append(chip)  # newest ends up closest to the pet
-        self._layout.addWidget(chip)
+        # A fixed-size chip inside a wider layer sits at the left edge by
+        # default, which would pull short bubbles off the pet's centre line.
+        self._layout.addWidget(chip, 0, Qt.AlignmentFlag.AlignHCenter)
         while len(self._chips) > MAX_BUBBLES:
             self._remove(self._chips[0])
         self._relayout()

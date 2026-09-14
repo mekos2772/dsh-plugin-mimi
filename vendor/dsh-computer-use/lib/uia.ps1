@@ -941,27 +941,17 @@ function Activate-Window([IntPtr]$hwnd) {
 function Get-AutomationRoot([IntPtr]$hwnd) {
   # Chrome (and other Chromium apps) churn their top-level widget windows, so a
   # freshly resolved MainWindowHandle can be momentarily unusable: FromHandle
-  # then throws an unrecognized-error HRESULT. Retry briefly, and if the handle
-  # stays dead, fall back to any other visible window of the same process.
-  $last = $null
+  # then throws an unrecognized-error HRESULT. Retry ONLY this HWND: a root from
+  # another window would invalidate both the snapshot's paths and its geometry.
+  $last = 'UIA returned no root'
   for ($i = 0; $i -lt 5; $i++) {
-    try { return [System.Windows.Automation.AutomationElement]::FromHandle($hwnd) } catch { $last = $_ }
-    Start-Sleep -Milliseconds 150
+    try {
+      $root = [System.Windows.Automation.AutomationElement]::FromHandle($hwnd)
+      if ($null -ne $root) { return $root }
+    } catch { $last = $_.Exception.Message }
+    if ($i -lt 4) { Start-Sleep -Milliseconds 150 }
   }
-  try {
-    $procId = [uint32]0
-    [void][CuNative]::GetWindowThreadProcessId($hwnd, [ref]$procId)
-    if ($procId -ne 0) {
-      $alt = [CuNative]::FindFirstWindowOfProcess($procId)
-      if ($alt -ne [IntPtr]::Zero -and $alt -ne $hwnd) {
-        for ($i = 0; $i -lt 3; $i++) {
-          try { return [System.Windows.Automation.AutomationElement]::FromHandle($alt) } catch { $last = $_ }
-          Start-Sleep -Milliseconds 150
-        }
-      }
-    }
-  } catch {}
-  throw $last
+  Fail "UI Automation is unavailable for window $($hwnd.ToInt64()); call get_app_state again. $last"
 }
 
 function Invoke-GetState($params) {
@@ -981,7 +971,9 @@ function Invoke-GetState($params) {
     $activateOnObserve = [bool]$params.annotate.activate
   }
   if ($activateOnObserve -and [CuNative]::GetForegroundWindow() -ne $hwnd) {
-    [void](Activate-Window $hwnd)
+    if (-not (Activate-Window $hwnd)) {
+      Fail "cannot bring window $($hwnd.ToInt64()) to the foreground; observation was not captured"
+    }
   }
 
   $rect = Get-WindowRectArr $hwnd
@@ -1199,7 +1191,9 @@ function Invoke-Action($params) {
   # Bring target forward: official Codex Windows operates the foreground app.
   $activate = if ($null -eq $params.activate) { $true } else { [bool]$params.activate }
   if ($activate -and $fg -ne $hwnd) {
-    [void](Activate-Window $hwnd)
+    if (-not (Activate-Window $hwnd)) {
+      Fail "cannot bring window $($hwnd.ToInt64()) to the foreground; action was not sent"
+    }
   }
 
   # screen->screenshot coordinate: params.x/y are screenshot pixels
@@ -1236,14 +1230,18 @@ function Invoke-Action($params) {
         $invoke = $null
         $r = $element.Current.BoundingRectangle
         $elCenter = @{ x = [int]($r.X - $rect.x) + [int]($r.Width / 2); y = [int]($r.Y - $rect.y) + [int]($r.Height / 2) }
-        try {
-          $pp = $element.GetSupportedPatterns()
-          if ($pp -contains [System.Windows.Automation.InvokePattern]::Pattern) {
-            $ip = $element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-            $ip.Invoke()
-            $invoke = 'InvokePattern'
-          }
-        } catch {}
+        # Invoke represents the default single-click action. Other mouse buttons
+        # and repeated clicks must retain their physical input semantics.
+        if ($button -eq 'left' -and $count -eq 1) {
+          try {
+            $pp = $element.GetSupportedPatterns()
+            if ($pp -contains [System.Windows.Automation.InvokePattern]::Pattern) {
+              $ip = $element.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
+              $ip.Invoke()
+              $invoke = 'InvokePattern'
+            }
+          } catch {}
+        }
         if ($invoke) {
           $ptS = & $toScreen $elCenter.x $elCenter.y
           return @{ ok = $true; via = 'InvokePattern'; note = 'clicked element via AX Invoke pattern'; x = $ptS.x; y = $ptS.y }

@@ -98,12 +98,16 @@ function ensureKernel() {
   });
   proc.once('close', () => dropKernel(state, 'exited', 'uia kernel exited before answering'));
   proc.once('error', () => dropKernel(state, 'spawn failed', 'uia kernel could not be spawned'));
+  proc.stdin.on('error', () => dropKernel(state, 'stdin unavailable', 'uia kernel stdin is unavailable'));
   kernel = state;
   return state;
 }
 
 function rawCall(params, opts) {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, signal } = opts;
+  // A queued call may have been cancelled while another request was running.
+  // Refuse it before spawning or borrowing a kernel for an unrelated call.
+  signal?.throwIfAborted();
   const state = ensureKernel();
   clearTimeout(idleTimer);   // a request is in flight; the kernel is not idle
   return new Promise((resolve, reject) => {

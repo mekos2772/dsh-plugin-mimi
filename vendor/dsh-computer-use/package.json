@@ -1,6 +1,6 @@
 {
   "name": "@milkuovo/dsh-computer-use",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Codex Computer Use for DeepSeek Harness on Windows: screenshot + UI Automation tree + mouse/keyboard actions, aligned with the official 10-method Codex Computer Use tool surface. Includes a zero-dependency stdio MCP server.",
   "type": "module",
   "main": "lib/index.js",
@@ -15,7 +15,7 @@
     "dsh-computer-use-mcp": "./mcp-server.mjs"
   },
   "scripts": {
-    "test": "node scripts/logic-test.mjs && node --test test/session.test.mjs test/approval-audit.test.mjs test/duplicate-guard.test.mjs test/mcp-stdio.test.mjs test/update.test.mjs",
+    "test": "node scripts/logic-test.mjs && node --test test/session.test.mjs test/approval-audit.test.mjs test/duplicate-guard.test.mjs test/cancellation.test.mjs test/kernel-safety.test.mjs test/mcp-stdio.test.mjs test/update.test.mjs",
     "test:integration": "node --test test/annotate.test.mjs test/cursor-return.test.mjs test/overlay-session.test.mjs test/tree-frames.test.mjs",
     "test:e2e": "node scripts/tool-surface-e2e.mjs"
   },
@@ -23,7 +23,8 @@
     "lib/",
     "mcp-server.mjs",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "dsh": {
     "bundle": {

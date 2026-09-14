@@ -49,6 +49,7 @@ class MimiWindow(QWidget):
         self.bounds_provider = bounds_provider
         self.size_changed = size_changed
         self.dsh = None
+        self.companion = None
         self._snapshot: RenderSnapshot | None = None
         self._pixmap = None
         self.debug_enabled = False
@@ -86,6 +87,9 @@ class MimiWindow(QWidget):
         self.resize(engine.display_w, engine.display_h)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
+        # True while the context menu owns the pointer; the per-tick layout
+        # pass must not move this window or raise another top-level one then.
+        self.menu_open = False
 
     # ------------------------------------------------------------------ rendering
 
@@ -174,9 +178,6 @@ class MimiWindow(QWidget):
             self._press_local = event.position()
             self._long_press_timer.start()
             event.accept()
-        elif event.button() == Qt.MouseButton.RightButton:
-            self._show_context_menu(event.globalPosition().toPoint())
-            event.accept()
 
     def _begin_drag(self, x: float, y: float) -> None:
         self._press_armed = False
@@ -217,6 +218,12 @@ class MimiWindow(QWidget):
             event.accept()
 
     def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        if event.button() == Qt.MouseButton.RightButton:
+            # Open on release: a popup shown while the button is still held is
+            # dismissed again by the button-up that follows.
+            self._show_context_menu(event.globalPosition().toPoint())
+            event.accept()
+            return
         if event.button() != Qt.MouseButton.LeftButton:
             return
         if self._press_armed:
@@ -334,12 +341,18 @@ class MimiWindow(QWidget):
             return
         menu = QMenu(self)
         menu.setStyleSheet(self.MENU_QSS)
+        # The pet, the input capsule and the bubble layer are all
+        # WindowStaysOnTopHint. Without the same flag the popup loses to them
+        # and is dismissed as soon as the pointer leaves the pet on its way in.
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
 
         # 动作一律由交互触发（分区点击/双击/拖放/DSH 事件/久坐久睡场景），
         # 菜单只保留功能入口：投喂、尺寸与位置、Harness。
         feed_action = menu.addAction("投喂圆面包")
         feed_action.triggered.connect(self.engine.feed_bread)
         menu.addSeparator()
+        if self.companion is not None:
+            self.companion.build_menu(menu)
 
         # 尺寸、停靠和调试显示集中到一个设置菜单。
         settings_menu = menu.addMenu("尺寸与位置")
@@ -436,6 +449,8 @@ class MimiWindow(QWidget):
                 installed, latest = update_info
                 update_item = dsh_menu.addAction(f"插件更新：v{latest} 已发布（当前 v{installed}）")
                 update_item.setEnabled(False)
+            check_update = dsh_menu.addAction("检查更新")
+            check_update.triggered.connect(lambda: self.dsh.check_plugin_update(manual=True))
             cot_menu = dsh_menu.addMenu("摘要模型")
             cot_menu.setStyleSheet(self.MENU_QSS)
             self._build_cot_menu(cot_menu)
@@ -455,7 +470,12 @@ class MimiWindow(QWidget):
         menu.addSeparator()
         quit_action = menu.addAction("退出 Mimi")
         quit_action.triggered.connect(self.close)
-        menu.exec(global_pos)
+        # The per-tick layout pass reads this to hold still while the menu is up.
+        self.menu_open = True
+        try:
+            menu.exec(global_pos)
+        finally:
+            self.menu_open = False
 
     def set_dsh_integration(self, dsh) -> None:
         self.dsh = dsh
