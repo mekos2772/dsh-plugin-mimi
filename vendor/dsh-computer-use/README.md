@@ -2,6 +2,8 @@
 
 面向 DeepSeek Harness（DSH）的 **Windows 桌面自动化工具**：截图 + 无障碍树双模态操控鼠标键盘，标准 DSH bundle（cordis 插件 + `defineTool` + `dsh.bundle.patch`），另附零依赖 stdio MCP server。
 
+版本变更见 [CHANGELOG.md](./CHANGELOG.md)。
+
 - **10 个工具接口**：`list_apps` `get_app_state` `click` `perform_secondary_action` `set_value` `select_text` `scroll` `drag` `press_key` `type_text`
 - **截图 + 无障碍树双模态**：`get_app_state` 返回 UIA 树（扁平 `element_index`，遍历序）+ 窗口截图（作为 image attachment 直接进入模型视觉上下文；DeepSeek adapter 会把工具结果图片发给 vision 模型）
 - **树文本带坐标**：每个元素行末尾带 `frame=[x,y,w,h]`；附件管线降采样时 JS 会把 frame 重缩放到附件像素空间（`modelScale`）——树坐标、截图、`click/scroll/drag` 坐标三者始终同一空间，树命中的元素可直接按 frame 中心点击，无需再对照截图
@@ -48,7 +50,7 @@ npx @milkuovo/dsh-computer-use   # 或本地: node mcp-server.mjs
 
 ## MCP 模式
 
-`dsh-computer-use-mcp`（源码 `mcp-server.mjs`，零依赖）暴露同样的 10 个工具（`element_index` 为 integer）。单次调用即用即退，元素快照持久化在 `%TEMP%\dsh-cu-mcp-session.json`，跨进程仍可按 `element_index` / `marker` 寻址；截图写入 `%TEMP%\dsh-cu-last-shot.png`。默认不启用审批门（由 MCP 宿主把关），`CU_APPROVAL=1` 可强制 fail-closed 审批；`CU_MAX_DEPTH` / `CU_MAX_NODES` 调整树捕获预算。
+`dsh-computer-use-mcp`（源码 `mcp-server.mjs`，零依赖）暴露同样的 10 个工具（`element_index` 为 integer）。单次调用即用即退，元素快照持久化在 `%TEMP%\dsh-cu-mcp-session.json`，跨进程仍可按 `element_index` / `marker` 寻址；截图以标准 MCP `image` 内容块返回，同时写入 `%TEMP%\dsh-cu-last-shot.png`，宿主无需额外读取本机文件即可看图。关闭输入后，服务会等待调用、审计写入和响应输出完成再退出。默认不启用审批门（由 MCP 宿主把关），`CU_APPROVAL=1` 可强制 fail-closed 审批；`CU_MAX_DEPTH` / `CU_MAX_NODES` 调整树捕获预算。
 
 真实任务示例（一步步 MCP 调用）：`list_apps` → `get_app_state` → `press_key ctrl+t` → `get_app_state` → `type_text` → `get_app_state` → `press_key Return` → `get_app_state` 找元素 → `click element_index` → `get_app_state` 验证。每个动作之间都重新观察，MCP 服务也会强制执行这条规则。
 

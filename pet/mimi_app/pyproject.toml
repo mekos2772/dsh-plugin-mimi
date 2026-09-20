@@ -11,6 +11,15 @@ dependencies = []
 
 [project.optional-dependencies]
 qt = ["PySide6>=6.7,<7"]
+# Windows System Media Transport Controls — the playback bar and the
+# media_cmd CLI. Without it the controller degrades to a quiet no-op.
+media = ["winsdk>=1.0.0b10"]
+# DSH realtime event stream (the remote mux socket). Without it the pet still
+# polls over HTTP, but no streamed text, tool row or approval card arrives.
+dsh = ["websocket-client>=1.6"]
+# Optional YAML settings parsing for the reply summarizer; it falls back to
+# the stdlib without it.
+yaml = ["PyYAML>=6.0"]
 
 [project.scripts]
 mimi-pet = "mimi_pet.main:main"

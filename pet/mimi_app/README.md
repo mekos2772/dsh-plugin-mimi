@@ -1,6 +1,6 @@
 # Mimi 桌宠运行程序（PySide6 v1）
 
-当前状态：交互/DSH 联动/桌宠 Agent 全链路可用；已适配并实机验证 DSH `0.1.2-rc.1`（2026-09-04）。**接手先读 `../docs/MIMI_PROJECT_HANDOFF.md`**（环境、启动命令、交互全景、DSH 协议、影子会话与权限）；素材方向再读 `../docs/MIMI_TEXT_MODEL_HANDOFF.md`。注意：本机 PySide6 6.11.1 装在**系统 Python 3.11**（`AppData\Local\Programs\Python\Python311`），项目 `.venv` 里没有——直接用系统解释器启动，命令见交接文档 §2。
+当前新增专注、勿扰和提醒由 DSH 的 Mimi 右侧面板管理，没有独立管理窗口。2026-09-14 使用本机已有 DSH `0.1.5-rc.1` 验证了插件加载、真实接口及退出保存；此前 DSH `0.1.2-rc.1` 的联动记录仍供参考。**接手先读 `../docs/MIMI_PROJECT_HANDOFF.md`**（环境、启动命令、交互全景、DSH 协议、影子会话与权限）；素材方向再读 `../docs/MIMI_TEXT_MODEL_HANDOFF.md`。注意：本机 PySide6 6.11.1 装在**系统 Python 3.11**（`AppData\Local\Programs\Python\Python311`），项目 `.venv` 里没有——直接用系统解释器启动，命令见交接文档 §2。
 
 新开发者或纯文本模型接手前必须先读 `../docs/MIMI_PROJECT_HANDOFF.md` 与 `../docs/MIMI_TEXT_MODEL_HANDOFF.md`，再读 `MIMI_ACTION_CATALOG.md`、`MIMI_LIVE2D_FOUNDATION.md`、`MIMI_PROJECT_FRAMEWORK.md`。本文只描述程序本身。
 
@@ -37,10 +37,14 @@ python -m unittest discover -s mimi_app/tests -v
 - **释放**：若脚底根节点在可用工作区底边之上 → Falling，按释放瞬间平滑速度施加重力下落；触地校正根节点 → Landing，完整播放 `land_recover_v4_12`，结束回 Idle。若释放时脚已着地 → 直接 Landing。
 - **右键菜单**（只提供功能入口，**不提供动作点播**——所有动作由交互、DSH 事件或场景触发器驱动）：
   - 首层：`投喂圆面包`（是否接受由饱食度决定，触发投喂/拒食动作）；
-  - `移动与休息`：普通或慢速向左/向右走、停止移动、坐下/站起来、睡觉/叫醒；
+  - 当前专注状态和 `在 DSH 中管理专注与提醒`：请求 DSH 的 Mimi 右侧面板，计时、勿扰、提醒与通知均在面板操作；
   - `尺寸与位置`：三档尺寸与缩放滑块、停靠屏幕底部/自由放置、回到屏幕底部、调试信息开关；
   - `Harness`：打开消息面板、摘要模型选择、回答 DSH 待答问题；
   - `退出`：停止全部 QTimer 并关闭窗口，不留后台进程。
+
+DSH 面板的“一句话安排”支持“陪我专注 25 分钟”“20 分钟后提醒我喝水”“明天 18:00 提醒我下班”。连接 DSH 后，桌宠模式输入框也可解析这些明确指令；工作模式不拦截这些文字。断开时不提供额外的离线输入或管理窗口。
+
+陪伴状态默认保存在 `%APPDATA%\MimiDesktopPet\companion.json`，可用 `MIMI_COMPANION_STATE_PATH` 指定其他位置。锁屏/休眠自动暂停，恢复后手动继续；重启只恢复到最近保存的剩余时长，不计算离线时间。DSH 通过继承的 stdin/stdout 管道控制所属桌宠，插件卸载或 DSH 退出时保存并关闭。详见 [DSH 陪伴说明](../docs/MIMI_COMPANION_FEATURES.md)。
 
 ## 代码结构
 
@@ -54,6 +58,13 @@ mimi_app/src/mimi_pet/
 ├─ scheduler.py         # 随机趣味动作冷却与概率
 ├─ engine.py            # 领域协调器：状态机+播放器+Live+拖拽+下落物理+交互反馈
 ├─ affection.py         # 好感度阶段、限流与用户目录原子持久化
+├─ companion.py         # 本地专注、勿扰、提醒与有界通知历史（纯 Python）
+├─ companion_store.py   # 版本化 JSON、原子保存与坏文件备份
+├─ companion_commands.py # 明确的中文本地指令解析
+├─ companion_protocol.py # 面板操作校验与状态快照（无 Qt）
+├─ companion_ipc.py     # DSH 父进程的私有 stdio 通信与退出接线
+├─ companion_ui.py      # 桌宠反馈、菜单和 DSH 导航请求，不创建管理窗口
+├─ session_monitor.py   # Windows 锁屏/休眠消息及输入桌面可用性检查
 ├─ collision.py         # 多显示器工作区与根节点碰撞（纯 Python）
 ├─ rig_model.py         # live_rig/model.json 解析（纯 Python）
 ├─ image_cache.py       # QPixmap 按路径缓存，同一 PNG 只解码一次

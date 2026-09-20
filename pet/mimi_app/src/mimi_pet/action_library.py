@@ -142,6 +142,26 @@ class ActionLibrary:
     def all(self) -> tuple[ActionSpec, ...]:
         return tuple(self._actions.values())
 
+    def asset_paths(self) -> tuple[Path, ...]:
+        """Every image file this library will decode, deduplicated.
+
+        Feeds the startup asset check. The loader only confirms that frames
+        exist, so a 0-byte or truncated file passes here and would otherwise
+        surface at the first render instead.
+        """
+        paths: list[Path] = []
+        seen: set[Path] = set()
+        for spec in (
+            *self._actions.values(),
+            *self._drag_poses.values(),
+            *self._release_transitions.values(),
+        ):
+            for path in spec.frames:
+                if path not in seen:
+                    seen.add(path)
+                    paths.append(path)
+        return tuple(paths)
+
     def random_performances(self) -> tuple[ActionSpec, ...]:
         return tuple(action for action in self._actions.values() if action.trigger == "random_performance")
 

@@ -68,6 +68,59 @@ class RigModel:
                 return layer
         raise KeyError(f"rig has no layer named {name!r}")
 
+    def asset_paths(self) -> tuple[Path, ...]:
+        """Every image file this rig will decode, deduplicated.
+
+        These are the assets drawn on *every* frame, so unlike an action frame
+        a broken one does not cost a single dropped frame — it costs the
+        silhouette. Feeds the startup asset check, which decodes them eagerly.
+        """
+        paths: list[Path] = []
+        seen: set[Path] = set()
+
+        def add(path: Path | None) -> None:
+            if path is not None and path not in seen:
+                seen.add(path)
+                paths.append(path)
+
+        for layer in self.layers:
+            add(layer.file)
+        if self.eye_tracking is not None:
+            add(self.eye_tracking.base_file)
+            add(self.eye_tracking.irises_file)
+            add(self.eye_tracking.clip_file)
+            add(self.eye_tracking.foreground_file)
+        if self.expression_patches is not None:
+            add(self.expression_patches.mouth_happy)
+            add(self.expression_patches.mouth_talk)
+            add(self.expression_patches.lids_blink)
+        for expression in self.expressions:
+            add(resolve_expression_master(self, expression))
+        return tuple(paths)
+
+
+def resolve_expression_master(model: RigModel, expression: str) -> Path | None:
+    """Resolve the master image a flat rig swaps in for ``expression``.
+
+    Mappings are authored relative to model.json, and the master itself
+    normally lives in model_root/source/. The renderer and the startup asset
+    check both go through here, so they can never disagree about which file
+    will actually be loaded — which is exactly the mistake to avoid, since the
+    check is worthless if it validates a path the renderer never opens.
+    """
+    filename = model.expressions.get(expression)
+    if filename is None:
+        return None
+    raw = Path(filename)
+    if raw.is_absolute():
+        return raw
+    try:
+        master = model.layer("character_master")
+    except KeyError:
+        return None  # layered rig: the expression swaps the head layer instead
+    from_root = master.file.parent.parent / raw
+    return from_root if from_root.is_file() else master.file.parent / raw.name
+
 
 def load_rig_model(model_path: Path) -> RigModel:
     """Load and validate a rig model.json; missing layer files raise FileNotFoundError."""

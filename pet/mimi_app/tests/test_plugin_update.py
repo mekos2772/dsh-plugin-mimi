@@ -207,6 +207,60 @@ class PluginUpdateFlowTests(unittest.TestCase):
         self.assertTrue(integration._update_checked)
         self.assertEqual(len(calls), 2, "两个 __link 只应触发一轮检查")
 
+    def _manual_event(self, installed: str, latest: str) -> DshEvent:
+        return DshEvent(
+            method="plugin/update",
+            rpc_id="",
+            payload={"installed": installed, "latest": latest, "manual": True},
+        )
+
+    def test_manual_check_reports_being_up_to_date(self) -> None:
+        integration, sink = self._integration()
+        integration._last_bubble_at = -1e9
+        integration._handle_event(self._manual_event("0.5.0", "0.5.0"))
+        self.assertEqual(sink.bubbles, [("info", "已是最新版本 v0.5.0。")])
+
+    def test_manual_check_reports_a_failed_lookup(self) -> None:
+        integration, sink = self._integration()
+        integration._last_bubble_at = -1e9
+        integration._handle_event(self._manual_event("", ""))
+        self.assertEqual(sink.bubbles, [("info", "暂时查不到更新信息，稍后再试。")])
+
+    def test_manual_result_ignores_the_bubble_throttle(self) -> None:
+        """点击后的反馈必须立刻可见，即使刚刚弹过别的气泡。"""
+        integration, sink = self._integration()
+        integration._last_bubble_at = time.perf_counter()
+        integration._handle_event(self._manual_event("0.5.0", "0.5.0"))
+        self.assertEqual(len(sink.bubbles), 1)
+
+    def test_automatic_check_stays_silent_when_up_to_date(self) -> None:
+        integration, sink = self._integration()
+        integration._last_bubble_at = -1e9
+        integration._handle_event(self._update_event("0.5.0", "0.5.0"))
+        self.assertEqual(sink.bubbles, [])
+
+    def test_manual_check_runs_again_after_the_automatic_one(self) -> None:
+        import mimi_pet.dsh_integration as di
+
+        integration, sink = self._integration()
+        integration._last_bubble_at = -1e9
+        calls: list[str] = []
+        originals = (di.installed_plugin_version, di.latest_plugin_version)
+        di.installed_plugin_version = lambda: calls.append("i") or "0.5.0"
+        di.latest_plugin_version = lambda: calls.append("l") or "0.5.0"
+        try:
+            integration.check_plugin_update()  # 自动检查，只跑一次
+            integration.drain_events()
+            integration.check_plugin_update(manual=True)  # 手动必须再查
+            deadline = time.time() + 5.0
+            while time.time() < deadline and len(calls) < 4:
+                integration.drain_events()
+                time.sleep(0.02)
+        finally:
+            di.installed_plugin_version, di.latest_plugin_version = originals
+        self.assertEqual(len(calls), 4, "手动检查应重新查询一次")
+        self.assertIn(("info", "正在检查更新…"), sink.bubbles)
+
 
 if __name__ == "__main__":
     unittest.main()

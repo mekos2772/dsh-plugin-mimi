@@ -63,9 +63,11 @@ export function apply(ctx, config = {}) {
     ctx.logger?.('computer-use')?.info?.('already active; skipped duplicate registration');
     return;
   }
+  // Config throws on invalid user config — claim the guard only after it
+  // succeeds, or the stuck key would block every retry until process restart.
+  const resolved = Config(config);
   const owner = {};
   globalThis[APPLIED_KEY] = owner;
-  const resolved = Config(config);
   setAuditEnabled(resolved.audit);
   const session = new ComputerUseSession();
 

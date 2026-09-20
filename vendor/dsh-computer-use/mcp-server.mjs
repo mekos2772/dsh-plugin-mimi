@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { Config } from './lib/index.js';
 import { buildTools, stopOverlay } from './lib/tools.js';
 import { ComputerUseSession } from './lib/session.js';
-import { setAuditEnabled } from './lib/audit.js';
+import { flushAudit, setAuditEnabled } from './lib/audit.js';
 import { stopPowerShellKernel } from './lib/ps1.js';
 
 const SESSION_FILE = process.env.CU_SESSION_FILE || join(tmpdir(), 'dsh-cu-mcp-session.json');
@@ -152,8 +152,11 @@ function contentFor(name, args, result) {
     if (ref && images.has(ref.attachmentId)) {
       const b64 = images.get(ref.attachmentId);
       images.delete(ref.attachmentId);
-      try { writeFileSync(SHOT_FILE, Buffer.from(b64, 'base64')); } catch { /* best-effort */ }
-      blocks.push({ type: 'text', text: `[screenshot saved to ${SHOT_FILE}]` });
+      blocks.push({ type: 'image', data: b64, mimeType: 'image/png' });
+      try {
+        writeFileSync(SHOT_FILE, Buffer.from(b64, 'base64'));
+        blocks.push({ type: 'text', text: `[screenshot saved to ${SHOT_FILE}]` });
+      } catch { /* local copy is best-effort; the image still reaches the host */ }
     }
     return blocks;
   }
@@ -245,5 +248,8 @@ process.stdin.on('end', async () => {
   persistSession();
   stopOverlay();
   stopPowerShellKernel();
-  process.exit(0);
+  await flushAudit();
+  // Natural exit also drains stdout: an image reply can exceed the pipe's
+  // buffer and process.exit() would truncate it for a slow reader.
+  process.exitCode = 0;
 });

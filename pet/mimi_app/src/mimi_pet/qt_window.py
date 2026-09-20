@@ -23,6 +23,7 @@ from PySide6.QtWidgets import QMenu, QSlider, QWidget, QWidgetAction
 from .collision import WorkArea, ground_for_point
 from .debug_overlay import draw_debug_overlay
 from .engine import PetEngine, touch_region
+from . import menu_labels
 
 # Dropped picture files count as treats (bread) for the pet.
 FEED_IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp")
@@ -49,6 +50,8 @@ class MimiWindow(QWidget):
         self.bounds_provider = bounds_provider
         self.size_changed = size_changed
         self.dsh = None
+        self.companion = None
+        self.media = None
         self._snapshot: RenderSnapshot | None = None
         self._pixmap = None
         self.debug_enabled = False
@@ -86,6 +89,9 @@ class MimiWindow(QWidget):
         self.resize(engine.display_w, engine.display_h)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
+        # True while the context menu owns the pointer; the per-tick layout
+        # pass must not move this window or raise another top-level one then.
+        self.menu_open = False
 
     # ------------------------------------------------------------------ rendering
 
@@ -174,9 +180,6 @@ class MimiWindow(QWidget):
             self._press_local = event.position()
             self._long_press_timer.start()
             event.accept()
-        elif event.button() == Qt.MouseButton.RightButton:
-            self._show_context_menu(event.globalPosition().toPoint())
-            event.accept()
 
     def _begin_drag(self, x: float, y: float) -> None:
         self._press_armed = False
@@ -217,6 +220,12 @@ class MimiWindow(QWidget):
             event.accept()
 
     def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        if event.button() == Qt.MouseButton.RightButton:
+            # Open on release: a popup shown while the button is still held is
+            # dismissed again by the button-up that follows.
+            self._show_context_menu(event.globalPosition().toPoint())
+            event.accept()
+            return
         if event.button() != Qt.MouseButton.LeftButton:
             return
         if self._press_armed:
@@ -332,18 +341,46 @@ class MimiWindow(QWidget):
     def _show_context_menu(self, global_pos: QPoint) -> None:
         if self.engine.states.state in (PetState.DRAGGING, PetState.FALLING):
             return
+        menu = self._build_context_menu()
+        # The per-tick layout pass reads this to hold still while the menu is up.
+        self.menu_open = True
+        try:
+            menu.exec(global_pos)
+        finally:
+            self.menu_open = False
+
+    def _build_context_menu(self) -> QMenu:
+        """Assemble the right-click menu without showing it.
+
+        Split from the exec loop so tests can inspect the popup — ``exec``
+        enters a nested event loop that only a real dismissal exits, which
+        cannot happen under an offscreen test platform.
+        """
         menu = QMenu(self)
         menu.setStyleSheet(self.MENU_QSS)
+        # The pet, the input capsule and the bubble layer are all
+        # WindowStaysOnTopHint. Without the same flag the popup loses to them
+        # and is dismissed as soon as the pointer leaves the pet on its way in.
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        # A single long runtime row (track title, focus label, DSH error)
+        # used to widen the popup to screen width. The labels are capped in
+        # menu_labels; this ceiling catches anything that slips past them.
+        menu_labels.cap_width(menu)
 
         # 动作一律由交互触发（分区点击/双击/拖放/DSH 事件/久坐久睡场景），
         # 菜单只保留功能入口：投喂、尺寸与位置、Harness。
         feed_action = menu.addAction("投喂圆面包")
         feed_action.triggered.connect(self.engine.feed_bread)
         menu.addSeparator()
+        if self.companion is not None:
+            self.companion.build_menu(menu)
+        if self.media is not None:
+            self.media.build_menu(menu)
 
         # 尺寸、停靠和调试显示集中到一个设置菜单。
         settings_menu = menu.addMenu("尺寸与位置")
         settings_menu.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(settings_menu)
         size_group = QActionGroup(settings_menu)
         size_group.setExclusive(True)
         for label, (width, height) in (
@@ -412,6 +449,7 @@ class MimiWindow(QWidget):
         if self.dsh is not None:
             dsh_menu = menu.addMenu("Harness")
             dsh_menu.setStyleSheet(self.MENU_QSS)
+            menu_labels.cap_width(dsh_menu)
             # 模式：工作模式跟随 DSH 活动；桌宠模式在头部悬停时聊天。
             mode_group = QActionGroup(dsh_menu)
             mode_group.setExclusive(True)
@@ -434,28 +472,38 @@ class MimiWindow(QWidget):
             update_info = self.dsh.plugin_update_available()
             if update_info:
                 installed, latest = update_info
-                update_item = dsh_menu.addAction(f"插件更新：v{latest} 已发布（当前 v{installed}）")
-                update_item.setEnabled(False)
+                menu_labels.add_item(
+                    dsh_menu,
+                    f"插件更新：v{latest} 已发布（当前 v{installed}）",
+                    enabled=False,
+                )
+            check_update = dsh_menu.addAction("检查更新")
+            check_update.triggered.connect(lambda: self.dsh.check_plugin_update(manual=True))
             cot_menu = dsh_menu.addMenu("摘要模型")
             cot_menu.setStyleSheet(self.MENU_QSS)
+            menu_labels.cap_width(cot_menu)
             self._build_cot_menu(cot_menu)
             if self.dsh.pending_questions:
                 questions_menu = dsh_menu.addMenu(f"回答 DSH 问题（{len(self.dsh.pending_questions)}）")
                 questions_menu.setStyleSheet(self.MENU_QSS)
+                menu_labels.cap_width(questions_menu)
                 for question in list(self.dsh.pending_questions):
-                    q_item = questions_menu.addAction(question.question[:30])
-                    q_item.setToolTip(question.detail or question.question)
+                    q_item = menu_labels.add_item(
+                        questions_menu, question.question,
+                        tooltip=question.detail or question.question,
+                    )
                     q_item.triggered.connect(
                         lambda checked=False, q=question: self._dsh_answer(q)
                     )
-            if self.dsh.last_error:
-                status_item = dsh_menu.addAction(f"未连接：{self.dsh.last_error[:30]}")
-                status_item.setEnabled(False)
+            if self.dsh.connection_error:
+                menu_labels.add_item(
+                    dsh_menu, f"未连接：{self.dsh.connection_error}", enabled=False
+                )
 
         menu.addSeparator()
         quit_action = menu.addAction("退出 Mimi")
         quit_action.triggered.connect(self.close)
-        menu.exec(global_pos)
+        return menu
 
     def set_dsh_integration(self, dsh) -> None:
         self.dsh = dsh
@@ -472,6 +520,7 @@ class MimiWindow(QWidget):
             return
         project_menu = dsh_menu.addMenu("项目")
         project_menu.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(project_menu)
         current = self._project_current() if self._project_current else None
         auto = project_menu.addAction("跟随当前活动")
         auto.setCheckable(True)
@@ -486,7 +535,12 @@ class MimiWindow(QWidget):
         for choice in choices:
             sid = choice["session_id"]
             dot = "●" if choice.get("running") else "○"
-            action = project_menu.addAction(f"{dot} {choice['label']}")
+            # Session labels are arbitrary user text; cap them so one long
+            # project name cannot widen the popup.
+            action = menu_labels.add_item(
+                project_menu, f"{dot} {choice['label']}",
+                tooltip=choice["label"],
+            )
             action.setCheckable(True)
             action.setChecked(current == sid)
             action.triggered.connect(
@@ -500,14 +554,16 @@ class MimiWindow(QWidget):
         current_sid = self.dsh._agent_session_id
         model_menu = dsh_menu.addMenu("桌宠模型")
         model_menu.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(model_menu)
         catalog = self.dsh.session_model_choices(force_refresh=True)
         current_provider, current_model, current_effort = self.dsh.current_session_model(current_sid)
         if not catalog:
             empty = model_menu.addAction("暂无可用模型")
             empty.setEnabled(False)
             if self.dsh._model_catalog_error:
-                err = model_menu.addAction(f"获取失败：{self.dsh._model_catalog_error[:30]}")
-                err.setEnabled(False)
+                menu_labels.add_item(
+                    model_menu, f"获取失败：{self.dsh._model_catalog_error}", enabled=False
+                )
             return
         if not current_sid:
             empty = model_menu.addAction("未准备桌宠会话")
@@ -518,8 +574,12 @@ class MimiWindow(QWidget):
             if entry.provider_label:
                 label = f"{entry.provider_label} · {label}"
             if entry.reasoning_efforts:
-                model_submenu = model_menu.addMenu(label)
+                # A submenu title is capped too: model ids plus provider
+                # labels are the widest strings the menu ever sees.
+                model_submenu = model_menu.addMenu(menu_labels.short_label(label))
                 model_submenu.setStyleSheet(self.MENU_QSS)
+                menu_labels.cap_width(model_submenu)
+                model_submenu.setToolTip(label)
                 for effort in entry.reasoning_efforts:
                     effort_action = model_submenu.addAction(effort.label or effort.effort_id)
                     effort_action.setCheckable(True)
@@ -536,7 +596,7 @@ class MimiWindow(QWidget):
                         )
                     )
                 continue
-            action = model_menu.addAction(label)
+            action = menu_labels.add_item(model_menu, label)
             action.setCheckable(True)
             action.setChecked(
                 entry.provider == current_provider and entry.model_id == current_model
@@ -574,7 +634,7 @@ class MimiWindow(QWidget):
             return
         current = (self.dsh.cot.provider, self.dsh.cot.model)
         for label, provider, model in self.dsh.cot_model_choices():
-            action = cot_menu.addAction(label)
+            action = menu_labels.add_item(cot_menu, label, tooltip=model or label)
             action.setCheckable(True)
             action.setChecked(
                 bool(self.dsh.cot.enabled) and (provider, model) == current

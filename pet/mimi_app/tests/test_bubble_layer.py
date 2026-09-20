@@ -75,6 +75,49 @@ class BubbleLayerTests(unittest.TestCase):
         QTest.qWait(50)
         self.assertEqual(len(layer.bubbles()), 0)  # clicked bubbles retire
 
+    def test_bubble_widens_with_the_text(self) -> None:
+        from mimi_pet.bubble_layer import BubbleChip
+
+        short = BubbleChip("好", "assistant")
+        longer = BubbleChip("专注已开始，25 分钟。", "assistant")
+        self.assertLess(short.width(), longer.width())
+        self.assertEqual(len(short._lines), 1)
+        self.assertEqual(len(longer._lines), 1)
+
+    def test_long_text_adds_lines_instead_of_clamping_early(self) -> None:
+        from mimi_pet.bubble_layer import BubbleChip, MAX_LINES
+
+        brief = BubbleChip("好", "assistant")
+        long = BubbleChip("这是一条很长的回复，" * 8, "assistant")
+        self.assertGreater(len(long._lines), len(brief._lines))
+        self.assertLessEqual(len(long._lines), MAX_LINES)
+        self.assertGreater(long.height(), brief.height())
+
+    def test_explicit_newline_starts_a_new_line(self) -> None:
+        from mimi_pet.bubble_layer import BubbleChip
+
+        chip = BubbleChip("出错了\n请稍后再试", "companion")
+        self.assertEqual(chip._lines, ["出错了", "请稍后再试"])
+
+    def test_overflow_appends_an_ellipsis(self) -> None:
+        from mimi_pet.bubble_layer import BubbleChip, MAX_LINES
+
+        chip = BubbleChip("字" * 400, "assistant")
+        self.assertEqual(len(chip._lines), MAX_LINES)
+        self.assertTrue(chip._lines[-1].endswith("…"))
+
+    def test_narrow_bubble_is_centred_in_the_stack(self) -> None:
+        layer = self._layer()
+        layer.add_bubble("好", "assistant", lifetime_s=60.0)
+        layer.add_bubble("这是一条明显更长的消息，用来把图层撑宽一些。", "assistant", lifetime_s=60.0)
+        layer.show()
+        QTest.qWait(50)
+        narrow = min(layer.bubbles(), key=lambda chip: chip.width())
+        self.assertLess(narrow.width(), layer.width())
+        left = narrow.x()
+        right = layer.width() - narrow.width() - narrow.x()
+        self.assertLessEqual(abs(left - right), 2)
+
 
 def Qt_MsButton():
     from PySide6.QtCore import Qt

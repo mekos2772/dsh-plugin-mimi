@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from .action_library import ActionLibrary
+from .action_library import ActionLibrary, ActionSpec
 from .affection import AffectionChange, AffectionStore, AffectionTracker
 from .collision import WorkArea, clamp_to_bounds, step_fall
 from .config import load_config
@@ -231,6 +231,10 @@ class PetEngine:
         # Placement mode: docked (default) falls back to the desk bottom;
         # free placement keeps the character where it was released.
         self.free_placement = False
+        self.quiet_mode = False
+        self.focus_companion = False
+        self.companion_busy = False
+        self._companion_seated = False
 
     # ------------------------------------------------------------- relationship
 
@@ -287,13 +291,34 @@ class PetEngine:
 
     # ------------------------------------------------------------------ actions
 
+    def _action(self, action_id: str) -> ActionSpec | None:
+        """Resolve one allowlisted action, or None when it is not playable.
+
+        Every caller must resolve BEFORE it mutates state. Neither
+        ``states.dispatch`` nor ``player.play`` can be undone, so a lookup that
+        raises after a transition leaves the pet in a state whose action never
+        finishes and never dispatches ACTION_FINISHED — a permanent freeze that
+        no click can break, because every further interaction is rejected by the
+        ``state is IDLE`` guard. A manifest that lost an entry (an older
+        MIMI_ASSET_ROOT, a pruned asset tree) is enough to trigger it.
+        """
+        try:
+            return self.library.get(action_id)
+        except KeyError as exc:
+            # Not silent: the pet stays usable and the reason is in the log.
+            dbg(f"action unavailable: {exc}")
+            return None
+
     def perform(self, action_id: str) -> bool:
         """Play an action from Idle only (scheduler path)."""
         if self.states.state is not PetState.IDLE:
             return False
+        spec = self._action(action_id)
+        if spec is None:
+            return False
         self._clear_movement()
         self.states.dispatch(Event.PERFORM)
-        self.player.play(self.library.get(action_id))
+        self.player.play(spec)
         return True
 
     def force_perform(self, action_id: str) -> bool:
@@ -307,10 +332,13 @@ class PetEngine:
             PetState.CLOSED,
         ):
             return False
+        spec = self._action(action_id)
+        if spec is None:
+            return False
         self._clear_movement()
         if state is PetState.IDLE:
             self.states.dispatch(Event.PERFORM)
-        self.player.play(self.library.get(action_id))
+        self.player.play(spec)
         return True
 
     def cancel_performance(self, allowed_ids: frozenset[str] | set[str] | None = None) -> bool:
@@ -381,24 +409,36 @@ class PetEngine:
             and self.player.action is not None
             and self.player.action.id in ("sit_down", "sit_idle")
         ):
-            self.player.play(self.library.get("stand_up"))
+            spec = self._action("stand_up")
+            if spec is None:
+                return False
+            self.player.play(spec)
             return True
         return False
 
     def start_sleep(self) -> bool:
         if self.states.state is not PetState.IDLE:
             return False
+        spec = self._action("sleep_lie_down")
+        if spec is None:
+            return False
         self._clear_movement()
         self.states.dispatch(Event.SLEEP)
         self._waking = False
-        self.player.play(self.library.get("sleep_lie_down"))
+        self.player.play(spec)
         return True
 
     def wake_up(self) -> bool:
         if self.states.state is not PetState.SLEEPING or self._waking:
             return False
+        # Resolve before latching ``_waking``: the flag is what gates this
+        # method, so setting it for an action that cannot play would leave the
+        # pet asleep for good.
+        spec = self._action("wake_up")
+        if spec is None:
+            return False
         self._waking = True
-        self.player.play(self.library.get("wake_up"))
+        self.player.play(spec)
         return True
 
     def trigger_touch(self, region: str, x_ratio: float = 0.5) -> bool:
@@ -522,6 +562,8 @@ class PetEngine:
         return True
 
     def try_random_performance(self, now_s: float, random_value: float | None = None) -> bool:
+        if self.quiet_mode or self.focus_companion:
+            return False
         if self.states.state is not PetState.IDLE:
             return False
         if now_s - self.scheduler.last_performance_s < self.scheduler.cooldown_s:
@@ -600,8 +642,14 @@ class PetEngine:
         elif pose_set.startswith("drag_") and output.direction in ("left", "right"):
             self._last_horizontal_direction = output.direction
         if pose_set != self._current_pose_set:
+            # Record the set first so a missing one is not retried on every
+            # mouse move (each retry would log); the current pose stays on
+            # screen, and the drag still works.
             self._current_pose_set = pose_set
-            self.drag_pose_player.play(self.library.drag_pose(pose_set))
+            try:
+                self.drag_pose_player.play(self.library.drag_pose(pose_set))
+            except KeyError as exc:
+                dbg(f"drag pose unavailable: {exc}")
         return output
 
     def set_external_bubble(self, text: str | None, duration_s: float = 6.0) -> None:
@@ -620,12 +668,37 @@ class PetEngine:
     def idle_seconds(self, now_s: float) -> float:
         return max(0.0, now_s - self._last_input_s)
 
+    def set_companion_mode(self, focusing: bool, quiet: bool, *, busy: bool = False) -> None:
+        """Apply a local accompaniment intent without replacing user actions."""
+        was_focusing = self.focus_companion
+        was_quiet = self.quiet_mode
+        self.focus_companion = bool(focusing)
+        self.quiet_mode = bool(quiet)
+        self.companion_busy = bool(busy)
+        if quiet and not was_quiet:
+            self.stop_walk()
+        if focusing and not was_focusing and self.states.state is PetState.SLEEPING:
+            self.wake_up()
+        if was_focusing and not focusing:
+            if self._companion_seated and self.is_sitting:
+                self.stand_up()
+            self._companion_seated = False
+            self.note_input(self.now_s)
+
+    def companion_check(self) -> bool:
+        if self.focus_companion and not self.companion_busy and self.states.state is PetState.IDLE:
+            self._companion_seated = self.start_sit()
+            return self._companion_seated
+        return False
+
     def scenario_check(self, now_s: float, random_value: float | None = None) -> bool:
         """Idle rest ladder: walk → sit → sleep (config-driven thresholds).
 
         Sitting persists until interrupted; a long enough sit escalates to
         sleep. Waking/standing is interaction-driven, never scenario-driven.
         """
+        if self.focus_companion:
+            return self.companion_check()
         state = self.states.state
         if state is PetState.SLEEPING:
             return False
@@ -648,7 +721,8 @@ class PetEngine:
             return self.start_sit()
         value = random.random() if random_value is None else random_value
         if (
-            idle >= self.autonomous_walk_idle_min_s
+            not self.quiet_mode
+            and idle >= self.autonomous_walk_idle_min_s
             and value < self.autonomous_walk_probability
         ):
             direction = random.choice(("left", "right"))
@@ -709,6 +783,8 @@ class PetEngine:
         self.note_input(self.now_s)
         if self.states.state is not PetState.IDLE:
             return False
+        if self.quiet_mode or self.focus_companion:
+            return False
         if away_s < self.welcome_back_after_s:
             return False
         if self.now_s - self._welcome_last_s < self.welcome_cooldown_s:
@@ -756,8 +832,21 @@ class PetEngine:
         self.vx = 0.0
         self.vy = 0.0
         self.states.dispatch(Event.RELEASE_GROUNDED)
-        self.player.play(self.library.get("land_recover_v4_12"))
+        self._play_landing()
         return "landing"
+
+    def _play_landing(self) -> None:
+        """Play the shared landing action, or settle straight to Idle without it.
+
+        LANDING is only left when that action reports finished, so a manifest
+        missing it would park the pet mid-landing forever. The no-animation
+        settle matches the free-placement release above.
+        """
+        spec = self._action("land_recover_v4_12")
+        if spec is None:
+            self.states.dispatch(Event.ACTION_FINISHED)
+            return
+        self.player.play(spec)
 
     def collide_ground(self, ground_y: float, impact_speed: float = 0.0) -> None:
         if self.states.state is not PetState.FALLING:
@@ -766,7 +855,7 @@ class PetEngine:
         self.vx = 0.0
         self.vy = 0.0
         self.states.dispatch(Event.GROUND_COLLISION)
-        self.player.play(self.library.get("land_recover_v4_12"))
+        self._play_landing()
 
     # ------------------------------------------------------------------ expressions
 
@@ -899,20 +988,30 @@ class PetEngine:
         sample = self.player.advance(dt_s * 1000.0)
         if sample is not None and sample.finished:
             finished_action = self.player.action.id if self.player.action else None
+            # The looping pose that follows a finished one-shot. None means
+            # "no follow-up": either the pose has none, or its action is not in
+            # the manifest — in which case falling through to the terminal
+            # branch returns the pet to Idle instead of re-reporting the same
+            # finished action every frame (a 60 Hz exception storm here would
+            # otherwise stop the pet dead).
+            follow_up: ActionSpec | None = None
+            settled = False
             if finished_action == "sit_down":
-                self.player.play(self.library.get("sit_idle"))
-                sample = self.player.advance(0.0)
+                follow_up = self._action("sit_idle")
             elif self.states.state is PetState.SLEEPING and finished_action in (
                 "sleep_lie_down",
             ):
-                self.player.play(self.library.get("sleep_loop"))
-                sample = self.player.advance(0.0)
+                follow_up = self._action("sleep_loop")
             elif self.states.state is PetState.SLEEPING and finished_action == "wake_up":
                 self.player.stop()
                 self._waking = False
                 self.states.dispatch(Event.WAKE)
                 sample = None
-            else:
+                settled = True
+            if follow_up is not None:
+                self.player.play(follow_up)
+                sample = self.player.advance(0.0)
+            elif not settled:
                 self.player.stop()
                 self._clear_movement()
                 self.states.dispatch(Event.ACTION_FINISHED)

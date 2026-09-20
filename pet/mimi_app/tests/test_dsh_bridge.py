@@ -345,6 +345,88 @@ class EventThreadLifecycleTests(unittest.TestCase):
         self.assertTrue(socket.closed)
 
 
+class UnavailableReaderTests(unittest.TestCase):
+    """A missing websocket-client must be reported, not silently survived.
+
+    The reader used to raise ImportError before its first statement, so the
+    thread died without a single log line: the pet kept polling happily over
+    HTTP and merely looked "disconnected", while every streamed token, tool row
+    and approval card was lost — an agent could sit blocked on a question whose
+    card never reached the panel.
+    """
+
+    def test_a_missing_websocket_stops_the_reader_and_reports_it(self) -> None:
+        reasons: list[str] = []
+        reader = DshEventThread(on_unavailable=reasons.append)
+        with mock.patch.dict(sys.modules, {"websocket": None}):
+            reader._run()  # returns rather than raising out of the thread
+        self.assertEqual(len(reasons), 1)
+        self.assertIn("websocket-client", reasons[0])
+        self.assertTrue(reader._fatal_reported)
+
+    def test_the_reason_is_reported_exactly_once(self) -> None:
+        reasons: list[str] = []
+        reader = DshEventThread(on_unavailable=reasons.append)
+        reader._fatal("first")
+        reader._fatal("second")
+        self.assertEqual(reasons, ["first"])
+
+    def test_a_failure_callback_that_raises_does_not_escape(self) -> None:
+        def boom(_reason: str) -> None:
+            raise RuntimeError("sink exploded")
+
+        reader = DshEventThread(on_unavailable=boom)
+        reader._fatal("x")  # must not propagate into the reader thread
+        self.assertTrue(reader._fatal_reported)
+
+    def test_no_callback_configured_is_not_an_error(self) -> None:
+        reader = DshEventThread()
+        reader._fatal("x")
+        self.assertTrue(reader._fatal_reported)
+
+
+class LinkErrorReportingTests(unittest.TestCase):
+    """A permanent reader failure has to outlive the HTTP poll.
+
+    ``last_error`` is wiped by every successful poll, and polling and the event
+    socket are independent transports — so on its own the reason vanished about
+    two seconds after it was set and the pet looked healthy while receiving
+    nothing.
+    """
+
+    def test_a_fatal_reason_reaches_the_status_surface(self) -> None:
+        integration = DshIntegration(make_engine())
+        integration._queue_link(False, "缺少 websocket-client 依赖")
+        integration.drain_events()
+        self.assertEqual(integration.link_error, "缺少 websocket-client 依赖")
+        self.assertFalse(integration.connected)
+        self.assertIn("websocket-client", integration.connection_error)
+        # And the capsule actually shows it.
+        self.assertIn("websocket-client", integration.activity.full_activity)
+        self.assertEqual(integration.activity.status, "fail")
+
+    def test_a_successful_poll_does_not_erase_the_link_error(self) -> None:
+        integration = DshIntegration(make_engine())
+        integration._queue_link(False, "缺少 websocket-client 依赖")
+        integration.drain_events()
+        integration.last_error = None  # what drain_poll does on "ok"
+        self.assertIn("websocket-client", integration.connection_error)
+
+    def test_an_ordinary_error_is_used_when_there_is_no_link_error(self) -> None:
+        integration = DshIntegration(make_engine())
+        integration.last_error = "连接超时"
+        self.assertEqual(integration.connection_error, "连接超时")
+        integration.link_error = "缺少 websocket-client 依赖"
+        self.assertEqual(integration.connection_error, "缺少 websocket-client 依赖")
+
+    def test_a_plain_disconnect_sets_no_error(self) -> None:
+        integration = DshIntegration(make_engine())
+        integration._handle_event(
+            DshEvent(method="__link", rpc_id="", payload={"connected": False})
+        )
+        self.assertEqual(integration.connection_error, "")
+
+
 class StreamingSinkTests(unittest.TestCase):
     def test_events_from_unselected_project_are_ignored(self) -> None:
         engine = make_engine()
@@ -746,6 +828,106 @@ class NewRemoteProtocolTests(unittest.TestCase):
         self.assertEqual(event.client_id, "client-2")
         self.assertEqual(event.event_id, "event-2")
         self.assertEqual(event.rpc_id, "event-2")
+
+    def test_assistant_stream_frames_map_to_legacy_chunk_events(self) -> None:
+        events = queue.Queue()
+        reader = DshEventThread(events=events)
+        reader._decode_assistant_stream_frame(
+            "session-1",
+            {"type": "start", "attemptId": "s1:1", "revision": 1, "turn": 2, "step": 3},
+        )
+        reader._decode_assistant_stream_frame(
+            "session-1",
+            {
+                "type": "chunk",
+                "attemptId": "s1:1",
+                "revision": 2,
+                "index": 0,
+                "time": 5,
+                "chunk": {"type": "text-delta", "index": 0, "text": "你好"},
+            },
+        )
+        reader._decode_assistant_stream_frame(
+            "session-1",
+            {
+                "type": "chunk",
+                "attemptId": "s1:1",
+                "revision": 3,
+                "index": 1,
+                "time": 6,
+                "chunk": {"type": "tool-call-delta", "index": 0, "id": "t1", "name": "pwsh", "argumentsDelta": "{}"},
+            },
+        )
+        # A chunk from a superseded attempt must be dropped.
+        reader._decode_assistant_stream_frame(
+            "session-1",
+            {
+                "type": "chunk",
+                "attemptId": "s1:0",
+                "revision": 4,
+                "index": 0,
+                "time": 7,
+                "chunk": {"type": "text-delta", "index": 0, "text": "旧尝试"},
+            },
+        )
+        reader._decode_assistant_stream_frame(
+            "session-1",
+            {
+                "type": "end",
+                "attemptId": "s1:1",
+                "revision": 5,
+                "index": 2,
+                "outcome": {"kind": "committed", "eventType": "assistant/message", "seq": 9},
+            },
+        )
+        decoded = [events.get_nowait() for _ in range(2)]
+        self.assertEqual([event.method for event in decoded], ["session/event", "session/event"])
+        first = decoded[0].payload
+        self.assertEqual(first["sessionId"], "session-1")
+        self.assertEqual(first["event"]["type"], "assistant/chunk")
+        self.assertEqual(first["event"]["data"]["chunk"]["text"], "你好")
+        second = decoded[1].payload
+        self.assertEqual(second["event"]["data"]["chunk"]["name"], "pwsh")
+        self.assertTrue(events.empty())
+
+    def test_follow_open_requests_assistant_stream(self) -> None:
+        """DSH 0.1.5 gates live chunks behind assistantStream in the follow request."""
+        sent: list[dict] = []
+
+        class FakeSocket:
+            def send(self, raw: str) -> None:
+                sent.append(json.loads(raw))
+
+        reader = DshEventThread(events=queue.Queue())
+        reader._send_open(
+            FakeSocket(),
+            "follow:session-9",
+            "session/follow",
+            {
+                "request": {
+                    "address": {"kind": "session", "sessionId": "session-9"},
+                    "maxMessages": 100,
+                    "assistantStream": True,
+                }
+            },
+        )
+        self.assertEqual(
+            sent[0],
+            {
+                "type": "open",
+                "streamId": "follow:session-9",
+                "endpoint": "session/follow",
+                "payload": {
+                    "args": {
+                        "request": {
+                            "address": {"kind": "session", "sessionId": "session-9"},
+                            "maxMessages": 100,
+                            "assistantStream": True,
+                        }
+                    }
+                },
+            },
+        )
 
 
 class BubbleDuplicateTests(unittest.TestCase):

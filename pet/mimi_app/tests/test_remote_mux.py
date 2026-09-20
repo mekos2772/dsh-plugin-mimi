@@ -230,7 +230,11 @@ class RemoteMuxStreamTests(unittest.TestCase):
         self.assertEqual(opened[0]["endpoint"], "session/follow")
         self.assertEqual(
             opened[0]["payload"]["args"]["request"],
-            {"address": {"kind": "session", "sessionId": "s-1"}, "maxMessages": 100},
+            {
+                "address": {"kind": "session", "sessionId": "s-1"},
+                "maxMessages": 100,
+                "assistantStream": True,
+            },
         )
         decoded = drain(self.events)
         self.assertEqual([event.method for event in decoded], ["session/event"] * 3)
@@ -290,6 +294,47 @@ class RemoteMuxStreamTests(unittest.TestCase):
         )
         self.assertEqual(len(sockets), 2)
         self.assertEqual([event.method for event in drain(self.events)], ["session/jobs"])
+
+    def test_live_assistant_stream_frames_decode_as_chunk_events(self) -> None:
+        """DSH 0.1.5: assistant-stream frames ride the mux outside item values."""
+        self.reader.set_sessions(["s-1"])
+        run_scripted(
+            self.reader,
+            [
+                item("events", {"type": "ready", "clientId": "client-1"}),
+                {
+                    "type": "assistant-stream",
+                    "streamId": "follow:s-1",
+                    "frame": {
+                        "type": "start",
+                        "attemptId": "s1:1",
+                        "revision": 1,
+                        "startedAfterSeq": 3,
+                        "turn": 1,
+                        "step": 1,
+                    },
+                },
+                {
+                    "type": "assistant-stream",
+                    "streamId": "follow:s-1",
+                    "frame": {
+                        "type": "chunk",
+                        "attemptId": "s1:1",
+                        "revision": 2,
+                        "index": 0,
+                        "time": 5,
+                        "chunk": {"type": "reasoning-delta", "index": 0, "text": "想想"},
+                    },
+                },
+                "stop",
+            ],
+        )
+        decoded = drain(self.events)
+        self.assertEqual([event.method for event in decoded], ["session/event"])
+        payload = decoded[0].payload
+        self.assertEqual(payload["sessionId"], "s-1")
+        self.assertEqual(payload["event"]["type"], "assistant/chunk")
+        self.assertEqual(payload["event"]["data"]["chunk"]["text"], "想想")
 
     def test_stream_end_reopens_control_and_follow_on_the_same_connection(self) -> None:
         self.reader.set_sessions(["s-1"])

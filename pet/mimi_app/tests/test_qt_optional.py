@@ -40,7 +40,10 @@ class DomainWithoutQtTests(unittest.TestCase):
             "import mimi_pet; "
             "import mimi_pet.collision, mimi_pet.rig_model, mimi_pet.engine, "
             "mimi_pet.scheduler, mimi_pet.frame_player, mimi_pet.live_controller, "
-            "mimi_pet.drag_controller, mimi_pet.state_machine, mimi_pet.config; "
+            "mimi_pet.drag_controller, mimi_pet.state_machine, mimi_pet.config, "
+            "mimi_pet.companion, mimi_pet.companion_store, mimi_pet.companion_commands, "
+            "mimi_pet.companion_protocol, mimi_pet.companion_ipc, "
+            "mimi_pet.smtc_core; "
             "print('domain-ok')"
         ) % (ROOT / "mimi_app" / "src")
         result = subprocess.run(
@@ -67,6 +70,12 @@ class DomainWithoutQtTests(unittest.TestCase):
             "config",
             "collision",
             "rig_model",
+            "companion",
+            "companion_store",
+            "companion_commands",
+            "companion_protocol",
+            "companion_ipc",
+            "smtc_core",
         ):
             source = (ROOT / "mimi_app" / "src" / "mimi_pet" / f"{module_name}.py").read_text(
                 encoding="utf-8"

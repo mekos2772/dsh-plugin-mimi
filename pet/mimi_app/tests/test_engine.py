@@ -448,5 +448,108 @@ class InteractionTests(unittest.TestCase):
         self.assertTrue(reached, "compact landing never played")
 
 
+class MissingManifestActionTests(unittest.TestCase):
+    """A manifest that lost an action must never freeze the pet.
+
+    Every path below used to resolve its action AFTER committing the state
+    change, so a KeyError left the pet performing / landing / sleeping with
+    ``player.action is None``: no frame ever finished, ACTION_FINISHED was
+    never dispatched, and the ``state is IDLE`` guards rejected every later
+    click. Only a drag could break out. An older MIMI_ASSET_ROOT or a pruned
+    asset tree is enough to hit it.
+    """
+
+    @staticmethod
+    def _stripped(*action_ids: str, all_drag_poses: bool = False) -> PetEngine:
+        engine = make_engine()
+        real_get = engine.library.get
+        real_drag_pose = engine.library.drag_pose
+        missing = set(action_ids)
+
+        def get(action_id: str):
+            if action_id in missing:
+                raise KeyError(f"Action is not in the usable allowlist: {action_id}")
+            return real_get(action_id)
+
+        def drag_pose(set_id: str):
+            if all_drag_poses:
+                raise KeyError(f"Drag pose set is not registered: {set_id}")
+            return real_drag_pose(set_id)
+
+        engine.library.get = get
+        engine.library.drag_pose = drag_pose
+        engine.place_at(500.0, 800.0)
+        return engine
+
+    def test_perform_with_a_missing_action_leaves_the_pet_idle(self) -> None:
+        engine = self._stripped("head_pat")
+        self.assertFalse(engine.perform("head_pat"))
+        self.assertEqual(engine.states.state, PetState.IDLE)
+        self.assertIsNone(engine.player.action)
+        # Still usable: the failure must not swallow the next interaction.
+        self.assertTrue(engine.perform("fun_facepalm"))
+
+    def test_force_perform_with_a_missing_action_keeps_the_current_one(self) -> None:
+        engine = self._stripped("head_pat")
+        self.assertTrue(engine.perform("fun_facepalm"))
+        self.assertFalse(engine.force_perform("head_pat"))
+        self.assertEqual(engine.states.state, PetState.PERFORMING)
+        self.assertEqual(engine.player.action.id, "fun_facepalm")
+
+    def test_a_missing_follow_up_pose_returns_the_pet_to_idle(self) -> None:
+        engine = self._stripped("sit_idle")
+        self.assertTrue(engine.start_sit())
+        for index in range(500):
+            engine.tick(index / 60.0, 1.0 / 60.0)
+            if engine.states.state is PetState.IDLE:
+                break
+        # Without the sit loop the pet settles back to Idle instead of sitting
+        # forever on an action that already reported finished.
+        self.assertEqual(engine.states.state, PetState.IDLE)
+        self.assertIsNone(engine.player.action)
+
+    def test_start_sleep_with_a_missing_action_leaves_the_pet_idle(self) -> None:
+        engine = self._stripped("sleep_lie_down")
+        self.assertFalse(engine.start_sleep())
+        self.assertEqual(engine.states.state, PetState.IDLE)
+        self.assertIsNone(engine.player.action)
+
+    def test_wake_up_with_a_missing_action_can_still_be_retried(self) -> None:
+        engine = self._stripped("wake_up")
+        self.assertTrue(engine.start_sleep())
+        self.assertEqual(engine.states.state, PetState.SLEEPING)
+        self.assertFalse(engine.wake_up())
+        # The gate flag must not latch, or the pet would sleep for good.
+        self.assertFalse(engine._waking)
+        self.assertEqual(engine.states.state, PetState.SLEEPING)
+        del engine.library.get
+        self.assertTrue(engine.wake_up())
+
+    def test_release_with_a_missing_landing_action_does_not_strand_landing(self) -> None:
+        engine = self._stripped("land_recover_v4_12")
+        engine.begin_drag(500.0, 800.0, 0.0)
+        self.assertEqual(engine.release(ground_y=800.0, timestamp_s=1.0), "landing")
+        self.assertEqual(engine.states.state, PetState.IDLE)
+        self.assertIsNone(engine.player.action)
+
+    def test_collision_with_a_missing_landing_action_does_not_strand_landing(self) -> None:
+        engine = self._stripped("land_recover_v4_12")
+        engine.place_at(500.0, 300.0)
+        engine.begin_drag(500.0, 300.0, 0.0)
+        self.assertEqual(engine.release(ground_y=800.0, timestamp_s=1.0), "falling")
+        engine.collide_ground(800.0)
+        self.assertEqual(engine.states.state, PetState.IDLE)
+        self.assertIsNone(engine.player.action)
+
+    def test_a_missing_drag_pose_does_not_escape_into_the_mouse_handler(self) -> None:
+        engine = self._stripped(all_drag_poses=True)
+        engine.begin_drag(500.0, 800.0, 0.0)
+        output = engine.update_drag(480.0, 800.0, 0.05, bounds=None)
+        self.assertIsNotNone(output)
+        self.assertIsNone(engine.drag_pose_player.action)
+        # Only the pose art is missing; the drag itself still tracks the cursor.
+        self.assertAlmostEqual(engine.root_x, 480.0 - engine.grab_dx)
+
+
 if __name__ == "__main__":
     unittest.main()

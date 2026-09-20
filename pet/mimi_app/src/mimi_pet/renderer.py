@@ -8,6 +8,7 @@ exclusively by the GUI adapter.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,8 +18,29 @@ from PySide6.QtGui import QColor, QImage, QPainter, QPixmap, QTransform
 from .engine import EngineFrame, PetEngine
 from .frame_player import FrameSample
 from .image_cache import ImageCache
-from .rig_model import RigModel
+from .rig_model import RigModel, resolve_expression_master
 from .state_machine import PetState
+
+
+@contextmanager
+def _painting(device):
+    """QPainter bound to ``device`` with guaranteed teardown.
+
+    ``QPainter(device)`` starts painting immediately, and Qt requires
+    ``end()`` before the paint device may be destroyed. A Python exception
+    escaping the transaction would otherwise leave the device marked active,
+    and Qt then tears down a device that is still being painted. That
+    invariant violation is not a catchable Python error — it surfaces as a
+    process-level abort during cleanup, so wrapping it in ``on_tick`` does not
+    help. Enforcing it here, at the ownership boundary of each composite,
+    keeps every future drawing addition safe by construction.
+    """
+    painter = QPainter(device)
+    try:
+        yield painter
+    finally:
+        if painter.isActive():
+            painter.end()
 
 
 @dataclass(frozen=True)
@@ -231,15 +253,14 @@ class QtRenderer:
         pivot_x, pivot_y = snapshot.pivot_display
         canvas = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
         canvas.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(canvas)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        transform = QTransform()
-        transform.translate(pivot_x, pivot_y)
-        transform.scale(scale_x, scale_y)
-        transform.translate(-pivot_x, -pivot_y)
-        painter.setTransform(transform)
-        painter.drawPixmap(0, 0, pixmap)
-        painter.end()
+        with _painting(canvas) as painter:
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            transform = QTransform()
+            transform.translate(pivot_x, pivot_y)
+            transform.scale(scale_x, scale_y)
+            transform.translate(-pivot_x, -pivot_y)
+            painter.setTransform(transform)
+            painter.drawPixmap(0, 0, pixmap)
         return QPixmap.fromImage(canvas)
 
     def _render_drag_pose(self, snapshot: RenderSnapshot) -> QPixmap:
@@ -260,19 +281,18 @@ class QtRenderer:
             return pixmap
         canvas = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
         canvas.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(canvas)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        pickup_x = 256.0 * self.display_w / 512.0
-        pickup_y = 80.0 * self.display_h / 768.0
-        transform = QTransform()
-        transform.translate(pickup_x, pickup_y)
-        transform.scale(scale_x, scale_y)
-        transform.rotate(snapshot.body_tilt)
-        transform.translate(-pickup_x, -pickup_y)
-        transform.translate(snapshot.root_drag_x, 0.0)
-        painter.setTransform(transform)
-        painter.drawPixmap(0, 0, pixmap)
-        painter.end()
+        with _painting(canvas) as painter:
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            pickup_x = 256.0 * self.display_w / 512.0
+            pickup_y = 80.0 * self.display_h / 768.0
+            transform = QTransform()
+            transform.translate(pickup_x, pickup_y)
+            transform.scale(scale_x, scale_y)
+            transform.rotate(snapshot.body_tilt)
+            transform.translate(-pickup_x, -pickup_y)
+            transform.translate(snapshot.root_drag_x, 0.0)
+            painter.setTransform(transform)
+            painter.drawPixmap(0, 0, pixmap)
         return QPixmap.fromImage(canvas)
 
     def _layer_pixmap(self, layer_name: str, file: Path) -> QPixmap:
@@ -288,9 +308,8 @@ class QtRenderer:
     def _render_rig(self, snapshot: RenderSnapshot) -> QPixmap:
         canvas = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
         canvas.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(canvas)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-
+        # Resolve everything the layers need BEFORE opening the painting
+        # transaction, so a failure here cannot leave a painter behind.
         breathe = snapshot.body_breathe
         body_tilt = snapshot.body_tilt
         ground_x, ground_y = snapshot.pivot_display
@@ -305,27 +324,28 @@ class QtRenderer:
         except KeyError:
             head_file = Path()
 
-        for layer in self.rig.layers:
-            if layer.experimental:
-                # skirt_hem is an experimental front-skirt layer with NO
-                # calibration in fit_report.json and no placement in the
-                # official rig preview script. Compositing it uncalibrated
-                # draws a second, misaligned skirt in front of the body.
-                # Keep its parameters reserved but never render it.
-                continue
-            self._draw_layer(
-                painter,
-                layer,
-                snapshot,
-                ground_x,
-                tilt_center_y,
-                breathe,
-                breathe_scale,
-                body_tilt,
-                head_file,
-                click_squash=click_squash,
-            )
-        painter.end()
+        with _painting(canvas) as painter:
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            for layer in self.rig.layers:
+                if layer.experimental:
+                    # skirt_hem is an experimental front-skirt layer with NO
+                    # calibration in fit_report.json and no placement in the
+                    # official rig preview script. Compositing it uncalibrated
+                    # draws a second, misaligned skirt in front of the body.
+                    # Keep its parameters reserved but never render it.
+                    continue
+                self._draw_layer(
+                    painter,
+                    layer,
+                    snapshot,
+                    ground_x,
+                    tilt_center_y,
+                    breathe,
+                    breathe_scale,
+                    body_tilt,
+                    head_file,
+                    click_squash=click_squash,
+                )
 
         pixmap = QPixmap.fromImage(canvas)
         # Root spring offset: the character sways inside the fixed window.
@@ -336,9 +356,8 @@ class QtRenderer:
         if snapshot.root_drag_x or root_drag_y:
             shifted = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
             shifted.fill(Qt.GlobalColor.transparent)
-            p2 = QPainter(shifted)
-            p2.drawImage(QPointF(snapshot.root_drag_x, root_drag_y), canvas)
-            p2.end()
+            with _painting(shifted) as p2:
+                p2.drawImage(QPointF(snapshot.root_drag_x, root_drag_y), canvas)
             pixmap = QPixmap.fromImage(shifted)
         return pixmap
 
@@ -346,18 +365,11 @@ class QtRenderer:
         """Flat rig (v5): blink/smile variants replace the whole master image."""
         if not self._flat_rig or not self.rig.expressions:
             return None
-        filename = self.rig.expressions.get(expression) or self.rig.expressions.get("neutral")
-        if filename is None:
-            return None
-        master = self.rig.layer("character_master")
-        raw = Path(filename)
-        if raw.is_absolute():
-            return raw
-        # Flat expression mappings are authored relative to model.json. The
-        # master itself normally lives in model_root/source/.
-        model_root = master.file.parent.parent
-        from_root = model_root / raw
-        return from_root if from_root.is_file() else master.file.parent / raw.name
+        # Shared resolver: the startup asset check has to validate the very
+        # same file, so the path logic may only exist in one place.
+        return resolve_expression_master(self.rig, expression) or resolve_expression_master(
+            self.rig, "neutral"
+        )
 
     def _head_file(self, expression: str) -> Path:
         head = self.rig.layer("head_expression")
@@ -416,20 +428,18 @@ class QtRenderer:
 
         moved = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
         moved.fill(Qt.GlobalColor.transparent)
-        eye_painter = QPainter(moved)
-        eye_painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        eye_painter.drawPixmap(QPointF(dx, dy), irises)
-        eye_painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationIn)
-        eye_painter.drawPixmap(0, 0, clip)
-        eye_painter.end()
+        with _painting(moved) as eye_painter:
+            eye_painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            eye_painter.drawPixmap(QPointF(dx, dy), irises)
+            eye_painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationIn)
+            eye_painter.drawPixmap(0, 0, clip)
 
         composed = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
         composed.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(composed)
-        painter.drawPixmap(0, 0, base)
-        painter.drawImage(0, 0, moved)
-        painter.drawPixmap(0, 0, foreground)
-        painter.end()
+        with _painting(composed) as painter:
+            painter.drawPixmap(0, 0, base)
+            painter.drawImage(0, 0, moved)
+            painter.drawPixmap(0, 0, foreground)
         result = QPixmap.fromImage(composed)
         self._head_pixmaps[key] = result
         return result
@@ -459,20 +469,19 @@ class QtRenderer:
         if mouth_key is None and not snapshot.eyes_closed:
             return base
         image = base.toImage()
-        painter = QPainter(image)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        if snapshot.eyes_closed:
-            # Lids first: they cover the tracked irises completely.
-            painter.drawPixmap(
-                0, 0, self._layer_pixmap("patch_lids_blink", patches.lids_blink)
-            )
-        if mouth_key is not None:
-            # The mouth is stamped last: in the few overlap rows the two
-            # paste ellipses share, the active mouth wins the lids' cheek
-            # feather, keeping the smile/lips intact.
-            key, file = mouth_key
-            painter.drawPixmap(0, 0, self._layer_pixmap(key, file))
-        painter.end()
+        with _painting(image) as painter:
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+            if snapshot.eyes_closed:
+                # Lids first: they cover the tracked irises completely.
+                painter.drawPixmap(
+                    0, 0, self._layer_pixmap("patch_lids_blink", patches.lids_blink)
+                )
+            if mouth_key is not None:
+                # The mouth is stamped last: in the few overlap rows the two
+                # paste ellipses share, the active mouth wins the lids' cheek
+                # feather, keeping the smile/lips intact.
+                key, file = mouth_key
+                painter.drawPixmap(0, 0, self._layer_pixmap(key, file))
         return QPixmap.fromImage(image)
 
     def _draw_layer(

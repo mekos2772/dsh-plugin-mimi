@@ -4,6 +4,7 @@ window wiring. ``python -m mimi_pet`` launches this by default.
 
 from __future__ import annotations
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -15,22 +16,33 @@ from PySide6.QtWidgets import QApplication
 
 from .action_library import ActionLibrary
 from .affection import AffectionStore
-from .bubble_layer import BubbleLayer
+from .asset_check import find_broken_assets
+from .bubble_layer import DEFAULT_LIFETIME_S, BubbleLayer
+from .focus_clock import FocusClock
 from .collision import WorkArea, ground_for_point, union_bounds
+from .companion import CompanionService
+from .companion_ipc import CompanionPipe
+from .companion_store import CompanionStore
+from .companion_ui import CompanionController
 from .config import load_config
 from .dsh_bridge import dbg
 from .dsh_integration import DshIntegration
 from .dsh_panel import DshPanel
 from .engine import PetEngine
+from .plugin_update import installed_plugin_version
 from .image_cache import ImageCache
+from .media import SmtcController
+from .media_bar import MediaBar
 from .qt_window import MimiWindow
+from .release_notes import announcement_bubble, take_announcement
 from .renderer import QtRenderer, build_snapshot
 from .rig_model import load_rig_model
+from .session_monitor import WindowsSessionMonitor
 from .state_machine import PetState
 
 TICK_INTERVAL_MS = 16  # ~60 Hz logic/render loop
 MAX_DT_S = 0.1
-SINGLETON_KEY = "mimi-pet-singleton"
+SINGLETON_KEY = os.environ.get("MIMI_SINGLETON_KEY", "mimi-pet-singleton")
 
 
 def qt_work_areas() -> tuple[WorkArea, ...]:
@@ -103,6 +115,31 @@ def run() -> int:
 
     # DSH integration: status polling + live event stream + message bar.
     integration = DshIntegration(engine)
+    companion_service = CompanionService(CompanionStore())
+    try:
+        focus_minutes = int(os.environ.get("MIMI_FOCUS_MINUTES", "25"))
+    except ValueError:
+        focus_minutes = 25
+    companion = CompanionController(
+        window, companion_service,
+        enabled=os.environ.get("MIMI_COMPANION_ENABLED", "1") != "0",
+        default_minutes=focus_minutes,
+    )
+    companion.is_dsh_busy = lambda: integration.is_busy
+    # System media (SMTC) companion: menu + status only. Chat requests go to
+    # the pet agent, which drives media_cmd.py through its PowerShell tool.
+    media = SmtcController(window)
+    window.media = media
+    if companion.actions.enabled:
+        integration.local_command_handler = companion.handle_command
+        integration.bubble_allowed = companion_service.allows_bubble
+    window.companion = companion
+    companion_pipe = (
+        CompanionPipe(companion.actions, app.quit)
+        if os.environ.get("MIMI_COMPANION_IPC") == "stdio-v1" else None
+    )
+    if companion_pipe is not None:
+        companion.panel_requested.connect(companion_pipe.open_panel)
     panel = DshPanel(window)
     integration.sink = panel
     panel.send_requested.connect(integration.prompt_active)
@@ -118,13 +155,21 @@ def run() -> int:
         """Character's actual head position (height ~220 display px, scaled)."""
         return engine.root_y - 220.0 * engine.display_h / 384.0
 
+    def pet_popup_open() -> bool:
+        """True while a popup owns the pointer (the pet's context menu).
+
+        Moving the pet window or raising the always-on-top capsule underneath
+        an open popup dismisses it on Windows, so the layout pass holds still.
+        """
+        return window.menu_open or app.activePopupWidget() is not None
+
     head_hovered = [False]
     hide_timer = QTimer()
     hide_timer.setSingleShot(True)
     hide_timer.setInterval(180)
 
     def on_hide_timeout() -> None:
-        if panel.quick_input.hasFocus():
+        if panel.quick_input.hasFocus() or pet_popup_open():
             return
         position_panel_at_pet()
 
@@ -132,6 +177,8 @@ def run() -> int:
 
     def on_head_hovered(hovered: bool) -> None:
         head_hovered[0] = bool(hovered)
+        if pet_popup_open():
+            return
         if hovered:
             hide_timer.stop()
             position_panel_at_pet()
@@ -164,16 +211,86 @@ def run() -> int:
     # (one bubble per message); clicking one focuses the input.
     bubbles = BubbleLayer()
 
-    def on_bubble_requested(text: str, kind: str) -> None:
+    # The focus dial trails the pet for the whole session, so the countdown
+    # stays visible without opening the DSH panel.
+    clock = FocusClock()
+    companion.clock = clock
+
+    def on_bubble_requested(text: str, kind: str, lifetime_s: float = DEFAULT_LIFETIME_S) -> None:
         dbg(f"bubble layer add kind={kind}")
         top = panel.y() if panel.isVisible() else pet_head_y()
         bubbles.position_above(engine.root_x, top)
-        bubbles.add_bubble(text, kind)
+        bubbles.add_bubble(text, kind, lifetime_s)
         if not panel.quick_input.hasFocus():
             position_panel_at_pet()
         dbg(f"bubble layer chips={len(bubbles.bubbles())} visible={bubbles.isVisible()}")
 
     panel.bubble_requested.connect(on_bubble_requested)
+    companion.bubble_requested.connect(panel.show_bubble)
+    media.bubble_requested.connect(panel.show_bubble)
+
+    # 播放栏：镜像系统媒体卡片，跟随宠物左侧；所有操作转发给 SMTC 会话。
+    # 默认关闭，由右键菜单的「显示音乐栏」打开。
+    media_bar = MediaBar()
+    media.track_changed.connect(media_bar.set_track)
+    media_bar.toggle_requested.connect(lambda: media.control("toggle"))
+    media_bar.next_requested.connect(lambda: media.control("next"))
+    media_bar.prev_requested.connect(lambda: media.control("previous"))
+    media.bar = media_bar
+
+    def announce_update() -> None:
+        """Say what changed, once, the first time this version is opened."""
+        version = installed_plugin_version()
+        text = take_announcement(version) if version else None
+        if not text:
+            return
+        # The full list lives in the panel's notice history; the bubble is the
+        # pointer to it, so it only needs the headline.
+        companion_service.add_announcement(text, f"update-{version}")
+        on_bubble_requested(announcement_bubble(version), "info", lifetime_s=12.0)
+        dbg(f"release announcement shown for v{version}")
+
+    # Asset check. The loaders only confirm that files exist, so a 0-byte image
+    # reaches the first render instead: a dropped frame on the full-frame path,
+    # a frozen silhouette on the rig path. Two passes cover the two real risks:
+    #
+    #   * every frame, stat only - ~200ms measured for 1125 files. This is
+    #     what catches a 0-byte file, the shape that actually shipped.
+    #   * the rig's ~11 every-frame assets, fully decoded - ~220ms. A broken
+    #     one of these is the only case that costs the silhouette rather than
+    #     a single frame, so it earns the decode.
+    #
+    # Decoding all 1103 frames was measured at ~4.6s; spreading that over idle
+    # ticks stretches it to tens of seconds of background churn, and the only
+    # extra failure it would catch is a truncated-but-non-empty action frame,
+    # worth one dropped frame. Not worth it.
+    asset_bubbled = [False]
+
+    def report_broken_assets(problems) -> None:
+        for path, reason in problems:
+            dbg(f"broken asset: {path} - {reason}")
+        if problems and not asset_bubbled[0]:
+            asset_bubbled[0] = True
+            on_bubble_requested(
+                f"素材损坏：{problems[0][0].name}（共 {len(problems)} 个），"
+                "显示可能异常。",
+                "info",
+                lifetime_s=12.0,
+            )
+
+    def check_action_frames() -> None:
+        """Stat every playable frame: catches a 0-byte file, costs ~200ms."""
+        rig_paths = set(rig.asset_paths())
+        report_broken_assets(
+            find_broken_assets(
+                (p for p in library.asset_paths() if p not in rig_paths),
+                decode=False,
+            )
+        )
+
+    def check_rig_assets() -> None:
+        """Decode the every-frame assets: a broken one costs the silhouette."""
+        report_broken_assets(find_broken_assets(rig.asset_paths(), decode=True))
 
     def on_bubble_clicked() -> None:
         if integration.connected:
@@ -182,6 +299,20 @@ def run() -> int:
             bubbles.hide()
 
     bubbles.message_clicked.connect(on_bubble_clicked)
+    bubbles.companion_clicked.connect(lambda: companion.request_panel("notices"))
+
+    def can_present_companion() -> bool:
+        focused = app.focusWidget()
+        typing = focused is not None and (
+            focused is panel or panel.isAncestorOf(focused)
+        )
+        return (
+            not typing and not integration.is_busy
+            and app.activePopupWidget() is None and app.activeModalWidget() is None
+            and (engine.states.state in (PetState.IDLE, PetState.SLEEPING) or engine.is_sitting)
+        )
+
+    companion.can_present = can_present_companion
 
     primary = QGuiApplication.primaryScreen()
     available = primary.availableGeometry()
@@ -216,6 +347,7 @@ def run() -> int:
     window.raise_()
     window.repaint()
     app.processEvents()
+    session_monitor = WindowsSessionMonitor(app, window, companion_service.system_event)
 
     ticker = QTimer()
     ticker.setTimerType(Qt.TimerType.PreciseTimer)
@@ -242,20 +374,37 @@ def run() -> int:
             )
         frame = engine.tick(now, dt, (float(cursor.x()), float(cursor.y())), ground, x_bounds)
         integration.maintain_anim()
-        # Keep the capsule pinned above the pet's head while visible, but
-        # re-evaluate the mode-specific visibility whenever the cursor moves.
-        if not panel.quick_input.hasFocus():
-            position_panel_at_pet()
-        if bubbles.isVisible() and not panel.quick_input.hasFocus():
-            top = panel.y() if panel.isVisible() else pet_head_y()
-            bubbles.position_above(engine.root_x, top)
+        # While the context menu is open the pet holds still and nothing else
+        # is raised: both would dismiss the popup. engine.tick keeps running,
+        # so no animation time is lost.
+        popup_open = pet_popup_open()
+        if not popup_open:
+            # Keep the capsule pinned above the pet's head while visible, but
+            # re-evaluate the mode-specific visibility whenever the cursor moves.
+            if not panel.quick_input.hasFocus():
+                position_panel_at_pet()
+            if bubbles.isVisible() and not panel.quick_input.hasFocus():
+                top = panel.y() if panel.isVisible() else pet_head_y()
+                bubbles.position_above(engine.root_x, top)
+            clock.position_near(engine.root_x, pet_head_y(), engine.display_w)
+            # Keep the anchor fresh whenever the bar is open, not just while
+            # visible, so opening it never flashes at a stale position.
+            if media_bar.is_open:
+                # Real window rect (the rig pivot is not the window centre).
+                media_bar.position_near(
+                    engine.root_x - engine.pivot_display_x,
+                    engine.root_y - engine.pivot_display_y,
+                    engine.display_w,
+                    engine.display_h,
+                )
         snapshot = build_snapshot(frame, engine, (engine.display_w, engine.display_h))
         pixmap = renderer_holder["renderer"].render(snapshot)
         window.show_frame(snapshot, pixmap)
-        window.move(
-            int(round(engine.root_x - engine.pivot_display_x)),
-            int(round(engine.root_y - engine.pivot_display_y)),
-        )
+        if not popup_open:
+            window.move(
+                int(round(engine.root_x - engine.pivot_display_x)),
+                int(round(engine.root_y - engine.pivot_display_y)),
+            )
 
     check = QTimer()
     check.setInterval(int(config["scheduler"]["idle_check_interval_s"] * 1000))
@@ -266,6 +415,18 @@ def run() -> int:
     # Keep streamed text and approval cards feeling live. drain_events itself
     # has a per-pass budget, so this cadence cannot starve rendering.
     dsh_drain.setInterval(50)
+    companion_timer = QTimer()
+    companion_timer.setInterval(250)
+
+    def on_companion_tick() -> None:
+        session_monitor.poll()
+        if companion_pipe is not None:
+            companion_pipe.drain()
+        companion.tick()
+        if companion_pipe is not None:
+            companion_pipe.publish()
+
+    companion_timer.timeout.connect(on_companion_tick)
 
     def on_check() -> None:
         now = time.perf_counter()
@@ -284,12 +445,27 @@ def run() -> int:
     dsh_poll.timeout.connect(on_dsh_poll)
     dsh_drain.timeout.connect(on_dsh_drain)
 
+    shutdown_done = False
+
     def shutdown() -> None:
+        nonlocal shutdown_done
+        if shutdown_done:
+            return
+        shutdown_done = True
         ticker.stop()
         check.stop()
         dsh_poll.stop()
         dsh_drain.stop()
+        companion_timer.stop()
+        session_monitor.close()
+        companion_service.tick()
+        companion_service.save()
+        if companion_pipe is not None:
+            companion_pipe.close()
         bubbles.hide()
+        clock.hide()
+        media_bar.hide()
+        media.shutdown()
         integration.stop()
         affection_store.save(engine.affection)
 
@@ -302,6 +478,15 @@ def run() -> int:
     check.start()
     dsh_poll.start()
     dsh_drain.start()
+    companion_timer.start()
+    if companion_pipe is not None:
+        companion_pipe.start()
+    # Announce after the pet is on screen and positioned, not mid-startup.
+    QTimer.singleShot(1500, announce_update)
+    # Likewise: never make startup wait on decoding assets. The two passes are
+    # ~200ms each, so they run apart rather than as one half-second hitch.
+    QTimer.singleShot(2500, check_action_frames)
+    QTimer.singleShot(3000, check_rig_assets)
     return app.exec()
 
 

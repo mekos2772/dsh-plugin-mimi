@@ -103,8 +103,9 @@ _tool_row_text = tool_row_text  # noqa: N816 (legacy alias)
 # the pet owns. Versioned so persona upgrades re-seed an existing session.
 AGENT_SESSION_TITLE = "Mimi 管家"
 AGENT_PERMISSION_PRESET = "danger-full-access"
-AGENT_PERSONA_VERSION = 4
-AGENT_PERSONA_PROMPT = """你是小咪（Mimi），用户的桌面宠物——一位温柔的鲸鱼娘陪伴者，同时也是这台 Windows 电脑的小管家。用户会直接用简短的中文跟你说话。
+AGENT_PERSONA_VERSION = 8
+_MEDIA_CLI = Path(__file__).resolve().parent / "media_cmd.py"
+AGENT_PERSONA_PROMPT = f"""你是小咪（Mimi），用户的桌面宠物——一位温柔的鲸鱼娘陪伴者，同时也是这台 Windows 电脑的小管家。用户会直接用简短的中文跟你说话。
 
 【身份与语气】
 - 始终用简短、亲切、口语化的简体中文回复：一般一两句话，最多四句。
@@ -134,6 +135,16 @@ AGENT_PERSONA_PROMPT = """你是小咪（Mimi），用户的桌面宠物——�
 - 一次只做用户要求的事，不要顺手多做。
 - 操作图形界面时，优先使用 Computer Use：先 list_apps 找窗口，再 get_app_state 观察；每执行一次 click/type_text/press_key/scroll/drag 等动作，都必须再次 get_app_state 验证结果后才能继续。优先 element_index 或截图 marker，只有没有合适目标时才用裸坐标。
 - 登录、支付、发送消息、发布内容、安装软件、删除数据、授权权限等会产生外部影响的最后一步，如果用户没有明确要求执行，先用一句话确认；用户已经明确要求的普通可逆界面操作不重复请示。
+
+【音乐控制】
+- 你能查看和遥控电脑的系统媒体卡片：Apple Music、浏览器里的播放器、QQ音乐等，任何播放器都通用。
+- 查看正在播放：python "{_MEDIA_CLI}" status
+- 播放/暂停：python "{_MEDIA_CLI}" play / pause（也可以用 toggle）
+- 切歌：python "{_MEDIA_CLI}" next / prev
+- 用户说“切歌/暂停/继续/现在放的什么歌”这类话时直接执行对应命令，不用请示。
+- 没有在放音乐时，可以提醒用户先在自己喜欢的播放器里放一首，或问他要不要打开 Apple Music（用 Start-Process 打开即可）。
+- 用户想听具体的歌时诚实说明：播放器里选歌这一步请他自己来，之后你负责控制。
+- 做不到就诚实说明，不要假装成功。
 
 【边界】
 - 只服务这台电脑的主人；拒绝可能危害系统或来源不明的指令。
@@ -174,10 +185,13 @@ class DshIntegration:
             events=self.event_queue,
             on_connect=lambda: self._queue_link(True),
             on_disconnect=lambda: self._queue_link(False),
+            on_unavailable=lambda reason: self._queue_link(False, reason),
             auth=self.bridge.auth,
         )
         self.working = False
         self.last_error: str | None = None
+        # Sticky: set only by a permanent reader failure (see connection_error).
+        self.link_error: str = ""
         self.pending_questions: list[DshQuestion] = []
         self._active_session: str | None = None
         self._was_running = False
@@ -223,6 +237,8 @@ class DshIntegration:
 
         # Panel sink (DshPanel or anything duck-typed); callbacks are optional.
         self.sink = None
+        self.local_command_handler = None  # (text) -> bool | None; agent mode only
+        self.bubble_allowed = None  # (kind) -> bool, supplied by local quiet mode
         self.on_activity = None  # callable(active: bool) -> panel show/hide
         self.last_activity_at = 0.0
 
@@ -280,6 +296,17 @@ class DshIntegration:
             full_activity="",
         )
 
+    @property
+    def connection_error(self) -> str:
+        """The error the user should see, permanent link failures first.
+
+        ``last_error`` is cleared by every successful HTTP poll, and polling and
+        the event socket are independent transports — so a reader that died for
+        good (a missing optional dependency, say) would look healthy again two
+        seconds later even though no event ever arrives. ``link_error`` sticks.
+        """
+        return self.link_error or self.last_error or ""
+
     # ------------------------------------------------------------------ lifecycle
 
     def start(self) -> None:
@@ -312,14 +339,25 @@ class DshIntegration:
         # Harness work always interrupts rest: a sleeping pet wakes, a
         # sitting pet stands back up before the work animations take over.
         interrupt = getattr(self.engine, "interrupt_rest", None)
-        if callable(interrupt):
+        if callable(interrupt) and (
+            not getattr(self.engine, "quiet_mode", False) or self._waiting_text
+        ):
             interrupt()
 
-    def _queue_link(self, connected: bool) -> None:
+    def _queue_link(self, connected: bool, reason: str = "") -> None:
         """Called from the websocket thread: hand off link state to the main
-        thread via the shared event queue (drained by a QTimer)."""
+        thread via the shared event queue (drained by a QTimer).
+
+        ``reason`` is for failures the user has to act on. It lands in
+        ``link_error``, which ``connection_error`` prefers and the status
+        capsule and the Harness menu both read. A silently stopped reader is
+        otherwise indistinguishable from an idle link.
+        """
         self.event_queue.put(
-            DshEvent(method="__link", rpc_id="", payload={"connected": connected})
+            DshEvent(
+                method="__link", rpc_id="",
+                payload={"connected": connected, "reason": reason},
+            )
         )
 
     def _reset_session_view(self) -> None:
@@ -395,8 +433,9 @@ class DshIntegration:
 
         waiting = bool(self._waiting_text)
         tool = self._tool_active
-        if self.last_error and not connected:
-            summary, full = "连接失败…", f"无法连接 DSH：{self.last_error[:80]}"
+        link_error = self.connection_error
+        if link_error and not connected:
+            summary, full = "连接失败…", f"无法连接 DSH：{link_error[:80]}"
             return make_state("fail", "连接失败", summary, full)
         if not connected and not self._active_session:
             summary, full = "未连接…", "尚未连接 DeepSeek Harness"
@@ -452,11 +491,15 @@ class DshIntegration:
         interaction with the input bar keeps either mode visible while the
         user is typing or moving the pointer across the card.
         """
-        if not self.connected:
+        if not self.connected and not self.local_input_available:
             return False
         if panel_interacting:
             return True
+        if self.connected and self._waiting_text:
+            return True
         if self.mode == "agent":
+            return bool(head_hovered)
+        if getattr(self.engine, "quiet_mode", False):
             return bool(head_hovered)
         return self._build_activity().status in {
             "thinking",
@@ -471,10 +514,18 @@ class DshIntegration:
         self.activity = self._build_activity()
         self._sink("set_activity", self.activity)
 
+    @property
+    def local_input_available(self) -> bool:
+        return self.connected and self.mode == "agent" and callable(self.local_command_handler)
+
+    @property
+    def is_busy(self) -> bool:
+        return bool(self.working or self._tool_active or self._reasoning_pending or self._waiting_text)
+
     def request_show_panel(self) -> None:
         """Explicitly show the message bar from the context menu."""
         self._note_activity()
-        if not self.connected:
+        if not self.connected and not self.local_input_available:
             self._emit_activity()
             return
         if self.on_activity is not None:
@@ -798,6 +849,10 @@ class DshIntegration:
         A status change may replace thinking/tool/listen, but never a touch,
         feeding, landing, dragging or another user-requested animation.
         """
+        if getattr(self.engine, "quiet_mode", False) and action_id in {
+            "harness_task_thinking_v1_12", "harness_tool_working_v1_12",
+        }:
+            return False
         if self.engine.states.state is PetState.IDLE:
             return self.engine.perform(action_id)
         current = self.engine.player.action
@@ -816,6 +871,8 @@ class DshIntegration:
         action forever; a fresh replay only happens after a gap so the pet
         returns to its natural standing sway between work cycles.
         """
+        if getattr(self.engine, "quiet_mode", False):
+            return
         if self.engine.states.state is not PetState.IDLE:
             return
         now = time.perf_counter()
@@ -837,6 +894,11 @@ class DshIntegration:
             # Processed on the main thread (drained by QTimer) — safe to touch
             # Qt here. First successful link reveals the head-top capsule.
             self.connected = bool(payload.get("connected"))
+            reason = str(payload.get("reason") or "")
+            if reason:
+                # Permanent: the reader has stopped for good, so the user needs
+                # the cause, not just "disconnected".
+                self.link_error = reason
             dbg(f"link connected={self.connected}")
             if not self.connected:
                 # Polling will restore work state after reconnect. Until then,
@@ -897,10 +959,18 @@ class DshIntegration:
             # npm 插件版本对比结果（worker 线程回投）。
             installed = str(payload.get("installed") or "").strip()
             latest = str(payload.get("latest") or "").strip()
+            manual = bool(payload.get("manual"))
             if installed and latest:
                 self.plugin_update = (installed, latest)
                 if is_newer(latest, installed):
-                    self._bubble(f"插件更新：v{latest} 已发布（当前 v{installed}）", kind="info")
+                    self._bubble(
+                        f"插件更新：v{latest} 已发布（当前 v{installed}）",
+                        kind="info", force=manual,
+                    )
+                elif manual:
+                    self._bubble(f"已是最新版本 v{installed}。", kind="info", force=True)
+            elif manual:
+                self._bubble("暂时查不到更新信息，稍后再试。", kind="info", force=True)
         elif method == "approval/requested":
             if not self._accept_event_session(payload):
                 self._emit_activity()
@@ -1324,8 +1394,9 @@ class DshIntegration:
             return
         self._recent_done_at = now
         self._sink("append_message", "progress", "完成")
-        self._bubble("任务完成～", kind="assistant")
-        if self.engine.states.state is PetState.IDLE:
+        if not getattr(self.engine, "quiet_mode", False):
+            self._bubble("任务完成～", kind="assistant")
+        if self.engine.states.state is PetState.IDLE and not getattr(self.engine, "quiet_mode", False):
             self.engine.force_perform("celebrate")
 
     def _trigger_listen(self) -> None:
@@ -1338,25 +1409,33 @@ class DshIntegration:
 
     # ------------------------------------------------------------ plugin update
 
-    def check_plugin_update(self) -> None:
-        """Compare the installed npm plugin version against the registry once."""
-        if self._update_checked:
+    def check_plugin_update(self, *, manual: bool = False) -> None:
+        """Compare the installed npm plugin version against the registry once.
+
+        ``manual`` re-queries on demand and always reports the outcome; the
+        automatic check at connect time stays silent when nothing changed.
+        """
+        if self._update_checked and not manual:
             return
         self._update_checked = True
+        if manual:
+            self._bubble("正在检查更新…", kind="info", force=True)
 
         def work() -> None:
             try:
                 installed = installed_plugin_version()
                 latest = latest_plugin_version()
             except Exception:
-                return
-            if not installed or not latest:
-                return
+                installed = latest = None
             self.event_queue.put(
                 DshEvent(
                     method="plugin/update",
                     rpc_id="",
-                    payload={"installed": installed, "latest": latest},
+                    payload={
+                        "installed": installed or "",
+                        "latest": latest or "",
+                        "manual": manual,
+                    },
                 )
             )
 
@@ -1368,15 +1447,18 @@ class DshIntegration:
             return self.plugin_update
         return None
 
-    def _bubble(self, text: str, duration: float = 4.0, kind: str = "info") -> None:
+    def _bubble(self, text: str, duration: float = 4.0, kind: str = "info", *, force: bool = False) -> None:
         """Transient bubble: the bubble layer when attached, else in-window.
 
         Lightly throttled so bursts of DSH events do not flood the head;
         question/approval bubbles always show (they need the user) and so does
-        the reply summary (it is naturally rate-limited by replies).
+        the reply summary (it is naturally rate-limited by replies). A bubble
+        answering a click the user just made passes ``force``.
         """
+        if callable(self.bubble_allowed) and not self.bubble_allowed(kind):
+            return
         now = time.perf_counter()
-        if kind not in ("question", "summary") and now - self._last_bubble_at < 1.2:
+        if not force and kind not in ("question", "summary") and now - self._last_bubble_at < 1.2:
             return
         self._last_bubble_at = now
         method = getattr(self.sink, "show_bubble", None)
@@ -1391,12 +1473,12 @@ class DshIntegration:
     def set_mode(self, mode: str) -> bool:
         """Switch between "link" (mirror work sessions) and "agent" (shadow).
 
-        Entering agent mode creates/reuses the archived shadow session on the
-        DSH host; on failure the mode stays unchanged (menu resets itself).
+        Companion commands do not need a chat session; create the shadow
+        session lazily on the first chat request when these commands are attached.
         """
         if mode not in ("link", "agent") or mode == self.mode:
             return mode == self.mode
-        if mode == "agent" and not self.ensure_agent_session():
+        if mode == "agent" and not callable(self.local_command_handler) and not self.ensure_agent_session():
             return False
         self.mode = mode
         # Re-select under the new isolation rule and retire all stream state
@@ -1548,6 +1630,13 @@ class DshIntegration:
         return (running or candidates[0]).session_id
 
     def prompt_active(self, text: str) -> bool:
+        if self.mode == "agent" and callable(self.local_command_handler) and not self.connected:
+            self._bubble("请连接 DSH 后，在 Mimi 面板中管理专注与提醒。")
+            return False
+        if self.local_input_available:
+            handled = self.local_command_handler(text)
+            if handled is not None:
+                return bool(handled)
         target = self.resolve_prompt_target()
         if target is None:
             if self.mode == "agent":
