@@ -49,7 +49,20 @@ PI_AI_DATA = Path(
     )
 )
 DEFAULT_SETTINGS_PATH = DEFAULT_DSH_HOME / "settings.yaml"
+# DSH 0.1.7+ renames the legacy settings.yaml to settings.yaml.imported after
+# importing the sections the running composition accepts; sections the new
+# schema refuses (e.g. volatile agent-default-model fields) remain only here.
+IMPORTED_SETTINGS_PATH = DEFAULT_DSH_HOME / "settings.yaml.imported"
 DEFAULT_CREDENTIALS_PATH = DEFAULT_DSH_HOME / ".credentials.yaml"
+
+
+def default_settings_path() -> Path:
+    """Locate the DSH settings document across DSH generations."""
+    if DEFAULT_SETTINGS_PATH.exists():
+        return DEFAULT_SETTINGS_PATH
+    if IMPORTED_SETTINGS_PATH.exists():
+        return IMPORTED_SETTINGS_PATH
+    return DEFAULT_SETTINGS_PATH
 
 # Fallback registry used when neither the pi-ai catalog nor settings describe
 # the provider. baseURL/protocol verified against the pi-ai catalog and DSH's
@@ -137,13 +150,13 @@ def load_yaml(path: Path) -> dict:
 
 def load_agent_default_model(settings: dict | None = None) -> tuple[str, str]:
     """(provider, model) from DSH settings' agent-default-model."""
-    settings = settings if settings is not None else load_yaml(DEFAULT_SETTINGS_PATH)
+    settings = settings if settings is not None else load_yaml(default_settings_path())
     block = settings.get("agent-default-model") or {}
     return str(block.get("provider", "opencode-go")), str(block.get("model", "deepseek-v4-flash"))
 
 
 def load_provider_settings(settings: dict | None = None) -> dict:
-    settings = settings if settings is not None else load_yaml(DEFAULT_SETTINGS_PATH)
+    settings = settings if settings is not None else load_yaml(default_settings_path())
     providers = {}
     for entry in (settings.get("llm-pi-ai") or {}).get("providers") or {}:
         providers[entry] = (settings["llm-pi-ai"]["providers"][entry] or {})
@@ -187,10 +200,10 @@ def _catalog_lookup(provider: str) -> dict | None:
     return None
 
 
-def resolve_provider_spec(provider: str) -> dict:
+def resolve_provider_spec(provider: str, settings: dict | None = None) -> dict:
     """Resolve {base, protocol, models} for a provider id, plus api key name."""
     spec = _catalog_lookup(provider) or dict(BUILTIN_PROVIDERS.get(provider) or {})
-    settings_providers = load_provider_settings()
+    settings_providers = load_provider_settings(settings)
     if provider in settings_providers:
         block = settings_providers[provider]
         if block.get("baseURL"):
@@ -269,7 +282,7 @@ class CoTSummarizer:
 
     def __init__(self, settings_path: Path | None = None,
                  credentials_path: Path | None = None) -> None:
-        self.settings_path = settings_path or DEFAULT_SETTINGS_PATH
+        self.settings_path = settings_path or default_settings_path()
         self.credentials_path = credentials_path or DEFAULT_CREDENTIALS_PATH
         self.provider: str | None = "auto"
         self.model: str | None = None
@@ -287,7 +300,7 @@ class CoTSummarizer:
         choices = [("自动（跟随 DSH）", "auto", "")]
         settings = load_yaml(self.settings_path)
         provider, model = load_agent_default_model(settings)
-        spec = resolve_provider_spec(provider)
+        spec = resolve_provider_spec(provider, settings)
         for m in spec.get("models") or []:
             choices.append((f"{provider} / {m}", provider, m))
         if self.model and self.model not in [c[2] for c in choices]:
@@ -320,7 +333,7 @@ class CoTSummarizer:
             model = self.model or ""
         if not provider:
             return None
-        spec = resolve_provider_spec(provider)
+        spec = resolve_provider_spec(provider, settings)
         key_name = spec.get("api_key_env", f"{provider.upper().replace('-', '_')}_API_KEY")
         api_key = credentials.get(key_name, "")
         if not api_key and provider == "auto":
