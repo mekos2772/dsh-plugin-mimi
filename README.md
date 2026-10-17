@@ -2,9 +2,9 @@
 
 Mimi 随 DSH 启动，跟随工作会话显示思考、工具调用、提问与回复，也支持桌宠聊天。专注、勿扰和一次性提醒统一放在 **DSH 会话顶部 Mimi → 右侧面板**，不创建独立管理窗口。
 
-- 当前发布版本：`0.7.9`，`engines.dsh` 声明 `>=0.1.7-rc.1 <0.3.0`（含 0.2.0 系列）。旧版 DSH（0.1.6 及更早）请继续使用 `0.7.6`。右侧引导页的 Mimi 入口带稳定 id `mimi-companion`。
-- 当前交接状态：源码与后端检查已完成，DSH 中的 Mimi 入口和面板交互仍待界面验收。
-- 本轮验证使用本机 DSH `0.1.7-rc.1`、Node.js 24、Python 3.11 和 PySide6 6.11.1。
+- 当前发布版本：`0.7.10`，`engines.dsh` 声明 `>=0.1.7-rc.1 <0.3.0`（含 0.2.x 系列）。旧版 DSH（0.1.6 及更早）请继续使用 `0.7.6`。右侧引导页的 Mimi 入口带稳定 id `mimi-companion`。
+- 当前交接状态：0.7.10 针对 DSH 0.2.1-rc.2 修好了 Python 侧的三个协议缺陷（子智能体 follow 地址、control 投影词表、job/list 任务流）；DSH 内的界面交互仍待界面验收。
+- 本轮验证使用本机 DSH `0.2.1-rc.2`、Node.js 24、Python 3.11 和 PySide6 6.11.1。
 - 已有 DSH 的用户直接沿用当前安装，无需为这组功能另装一套 DSH。
 - npm：<https://www.npmjs.com/package/mimi-desktop-pet>
 - 源码：<https://github.com/mekos2772/dsh-plugin-mimi>

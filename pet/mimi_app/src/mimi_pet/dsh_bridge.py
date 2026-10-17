@@ -39,6 +39,17 @@ REMOTE_PATH = "/api/remote.mux"
 EVENTS_PATH = REMOTE_PATH
 RESPOND_PATH = "/api/$events/result"
 
+# `session/follow` failures that describe the ADDRESS rather than a transient
+# stream fault. Re-opening the same address would just be rejected again, so
+# the session is parked until `session/list` reports a different origin.
+FOLLOW_ADDRESS_ERRORS = frozenset({
+    "session/agent-busy",       # subagent Session addressed without its parent
+    "subagent/unauthorized",    # parent id does not own this child
+    "subagent/catalog-diagnostic",  # child descriptor corrupt or unavailable
+    "session/not-found",
+    "gateway/bad-request",
+})
+
 
 def _local_timezone() -> str:
     """IANA timezone for prompt payloads; Windows-safe fallback UTC+8."""
@@ -69,6 +80,13 @@ class DshSession:
     model_provider: str = ""
     model_id: str = ""
     reasoning_effort: str = ""
+    # DSH marks a Session spawned by a subagent turn with ``origin="subagent"``
+    # and the durable parent it belongs to. ``session/follow`` cannot address
+    # such a Session by its own id (the Host rejects that with
+    # ``session/agent-busy``: "subagent Sessions require their durable parent
+    # address"), so both fields are needed to build the union address.
+    origin: str = ""
+    parent_session_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -285,6 +303,8 @@ class DshBridge:
                     model_provider=str(selected_model.get("provider") or ""),
                     model_id=str(selected_model.get("model") or ""),
                     reasoning_effort=str(selected_model.get("reasoningEffort") or ""),
+                    origin=str(item.get("origin") or ""),
+                    parent_session_id=str(item.get("parentSessionId") or ""),
                 )
             )
         return sessions
@@ -498,6 +518,11 @@ class DshEventThread:
         self._seen_sequences: dict[str, set[int]] = {}
         # Active DSH 0.1.5 assistant-stream attempt per followed session.
         self._live_attempts: dict[str, dict[str, Any]] = {}
+        # sessionId -> (origin, parentSessionId) from the last `session/list`.
+        self._session_addresses: dict[str, tuple[str, str]] = {}
+        # Sessions the Host refused to follow for an address reason; re-opening
+        # them on every reconnect would just earn the same rejection.
+        self._unfollowable: set[str] = set()
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -576,6 +601,13 @@ class DshEventThread:
             if stream_id.startswith("follow:")
         }
         for session_id in sorted(desired - set(open_sessions)):
+            address = self._follow_address(session_id)
+            if address is None:
+                # A subagent child whose parent we never learned cannot be
+                # followed at all: sending the plain session address would earn
+                # the same `session/agent-busy` rejection on every reconnect.
+                self._unfollowable.add(session_id)
+                continue
             stream_id = f"follow:{session_id}"
             self._send_open(
                 ws,
@@ -583,7 +615,7 @@ class DshEventThread:
                 "session/follow",
                 {
                     "request": {
-                        "address": {"kind": "session", "sessionId": session_id},
+                        "address": address,
                         "maxMessages": 100,
                         # DSH 0.1.5: live assistant chunks only arrive when
                         # opted in; without this the pet sees tool events but
@@ -593,6 +625,7 @@ class DshEventThread:
                 },
             )
             active[stream_id] = session_id
+            self._open_job_stream(ws, active, session_id)
         for session_id, stream_id in list(open_sessions.items()):
             if session_id not in desired:
                 try:
@@ -600,6 +633,50 @@ class DshEventThread:
                 except Exception:
                     pass
                 active.pop(stream_id, None)
+                jobs_stream = f"jobs:{session_id}"
+                if jobs_stream in active:
+                    try:
+                        self._send_json(ws, {"type": "cancel", "streamId": jobs_stream})
+                    except Exception:
+                        pass
+                    active.pop(jobs_stream, None)
+
+    def _follow_address(self, session_id: str) -> dict[str, Any] | None:
+        """The ``session/follow`` address for one Session, or ``None``.
+
+        Ordinary Sessions use ``{kind:'session', sessionId}``. A Session whose
+        header carries ``origin='subagent'`` must instead be addressed through
+        its durable parent — the Host's ``validateAddress`` rejects the plain
+        form with ``session/agent-busy``. ``mode:'unknown'`` skips the mode
+        comparison, so the pet does not need the child's continuation kind.
+        """
+        known = self._session_addresses.get(session_id)
+        if known is None:
+            # Unknown shape: keep the historical behaviour (plain session
+            # address) so an older Host without `origin` keeps working.
+            return {"kind": "session", "sessionId": session_id}
+        origin, parent = known
+        if origin != "subagent":
+            return {"kind": "session", "sessionId": session_id}
+        if not parent:
+            return None
+        return {
+            "kind": "subagent",
+            "parentSessionId": parent,
+            "childSessionId": session_id,
+            "mode": "unknown",
+        }
+
+    def set_session_addresses(self, sessions: list[DshSession] | tuple[DshSession, ...]) -> None:
+        """Learn which followed Sessions are subagent children and their parent.
+
+        The Qt side already refreshes `session/list` on a timer; handing the
+        result over here keeps the address table and the RPC view from drifting.
+        """
+        self._session_addresses = {
+            item.session_id: (getattr(item, "origin", ""), getattr(item, "parent_session_id", ""))
+            for item in sessions
+        }
 
     def _run_legacy_socket(self, ws: Any) -> None:
         """Keep pre-Remote unit fakes and old embedders from spinning forever."""
@@ -701,6 +778,8 @@ class DshEventThread:
                                 self._decode_event_value(value)
                         elif stream_id == "control":
                             self._decode_control_value(value)
+                        elif stream_id.startswith("jobs:"):
+                            self._decode_job_list_value(stream_id.removeprefix("jobs:"), value)
                         elif stream_id.startswith("follow:"):
                             session_id = stream_id.removeprefix("follow:")
                             if isinstance(value, dict) and value.get("type") == "assistant-stream":
@@ -717,18 +796,21 @@ class DshEventThread:
                     elif frame_type == "error":
                         error = frame.get("error") or {}
                         message = str(error.get("message") or "remote stream failed")
+                        code = str(error.get("code") or "")
                         if stream_id == "events":
                             raise ConnectionError(message)
-                        dbg(f"remote mux stream error stream={stream_id}: {message}")
+                        # A failed stream never receives a matching `end`, so
+                        # without dropping it from `active` the connection would
+                        # keep that stream id forever and never re-open it —
+                        # silently losing every later row on it.
+                        active.pop(stream_id, None)
+                        dbg(f"remote mux stream error stream={stream_id} code={code}: {message}")
+                        self._retry_stream_after_error(ws, active, stream_id, code)
                     elif frame_type == "end":
                         if stream_id == "events":
                             raise ConnectionError("remote events stream ended")
                         active.pop(stream_id, None)
-                        if stream_id == "control" and not self._stop.is_set():
-                            self._send_open(ws, "control", "session/control", {})
-                            active["control"] = ""
-                        elif stream_id.startswith("follow:") and stream_id.removeprefix("follow:") in self._desired_sessions:
-                            self._open_follow_streams(ws, active, self._desired_sessions)
+                        self._retry_stream_after_error(ws, active, stream_id, "")
             except Exception as exc:
                 if not self._stop.is_set():
                     dbg(f"remote mux error: {type(exc).__name__}: {exc}")
@@ -747,6 +829,56 @@ class DshEventThread:
                 retry_delay = min(8.0, retry_delay * 2.0)
 
     # -------------------------------------------------------------- decoders
+
+    def _retry_stream_after_error(
+        self, ws: Any, active: dict[str, str], stream_id: str, code: str
+    ) -> None:
+        """Re-open one logical stream after an `error` or `end` frame.
+
+        ``session/control`` and the per-session ``job/list`` stream are whole-set
+        mirrors, so re-opening is always safe: the Host answers with a fresh
+        baseline. ``session/follow`` is gap-free instead, so a reconnect would
+        replay from a cursor the Host chooses — the pet re-opens it only after
+        dropping it from ``active``, exactly as an `end` always did.
+
+        Address-shaped follow failures are terminal for that Session until
+        ``session/list`` reports a different origin; retrying them would just
+        earn the same rejection on every reconnect.
+        """
+        if self._stop.is_set():
+            return
+        if stream_id == "control":
+            self._send_open(ws, "control", "session/control", {})
+            active["control"] = ""
+            return
+        if stream_id.startswith("jobs:"):
+            session_id = stream_id.removeprefix("jobs:")
+            if session_id in self._desired_sessions:
+                self._open_job_stream(ws, active, session_id)
+            return
+        if stream_id.startswith("follow:"):
+            failed_session = stream_id.removeprefix("follow:")
+            if code in FOLLOW_ADDRESS_ERRORS:
+                self._unfollowable.add(failed_session)
+                dbg(f"follow address rejected for {failed_session} ({code}); not retrying")
+                return
+            self._unfollowable.discard(failed_session)
+            if failed_session in self._desired_sessions:
+                self._open_follow_streams(ws, active, self._desired_sessions)
+
+    def _open_job_stream(self, ws: Any, active: dict[str, str], session_id: str) -> None:
+        """Open the whole-set ``job/list`` mirror for one followed Session.
+
+        Background jobs left ``session/control`` in DSH 0.2: they now live on
+        this independent stream, whose frames replace the roster wholesale.
+        """
+        stream_id = f"jobs:{session_id}"
+        try:
+            self._send_open(ws, stream_id, "job/list", {"request": {"sessionId": session_id}})
+        except Exception as exc:
+            dbg(f"job/list open failed for {session_id}: {type(exc).__name__}: {exc}")
+            return
+        active[stream_id] = session_id
 
     def _put(
         self,
@@ -828,23 +960,59 @@ class DshEventThread:
             )
 
     def _decode_control_value(self, value: Any) -> None:
+        """Decode one ``session/control`` frame.
+
+        DSH 0.2 carries **projections**, not jobs: the frame union is exactly
+        ``{type:'baseline', value:{projections}}`` and
+        ``{type:'projection', sessionId, key, value, seq}``. Background jobs
+        moved to their own ``job/list`` stream, which `_open_job_stream` opens
+        per followed Session; a deployment that ever composes a ``jobs``
+        projection is still honored here.
+        """
         if not isinstance(value, dict):
             return
         frame_type = value.get("type")
         if frame_type == "baseline":
-            baseline = value.get("value") or {}
-            jobs = baseline.get("jobs") if isinstance(baseline, dict) else {}
-            if isinstance(jobs, dict):
-                for session_id, rows in jobs.items():
-                    self._put("session/jobs", {"sessionId": str(session_id), "jobs": rows if isinstance(rows, list) else []})
-        elif frame_type == "jobs":
+            baseline = value.get("value")
+            if not isinstance(baseline, dict):
+                return
+            projections = baseline.get("projections")
+            if not isinstance(projections, dict):
+                return
+            for session_id, entry in projections.items():
+                values = entry.get("values") if isinstance(entry, dict) else None
+                if not isinstance(values, dict):
+                    continue
+                jobs = values.get("jobs")
+                if isinstance(jobs, list):
+                    self._put(
+                        "session/jobs",
+                        {"sessionId": str(session_id), "jobs": jobs},
+                    )
+        elif frame_type == "projection":
+            if value.get("key") != "jobs":
+                return
             self._put(
                 "session/jobs",
                 {
                     "sessionId": str(value.get("sessionId") or ""),
-                    "jobs": value.get("jobs") if isinstance(value.get("jobs"), list) else [],
+                    "jobs": value.get("value") if isinstance(value.get("value"), list) else [],
                 },
             )
+
+    def _decode_job_list_value(self, session_id: str, value: Any) -> None:
+        """Decode one whole-set ``job/list`` frame into the legacy job payload.
+
+        The stream has no natural end: every frame is the complete roster, so
+        each one simply replaces the previous rows for that Session.
+        """
+        if not isinstance(value, dict) or value.get("type") != "rows":
+            return
+        rows = value.get("jobs")
+        self._put(
+            "session/jobs",
+            {"sessionId": session_id, "jobs": rows if isinstance(rows, list) else []},
+        )
 
     def _remember_seq(self, session_id: str, seq: Any) -> bool:
         try:

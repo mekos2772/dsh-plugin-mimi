@@ -571,6 +571,14 @@ class DshIntegration:
 
     def _apply_sessions(self, sessions: list) -> None:
         self._known_sessions = list(sessions)
+        # The follow stream needs each Session's origin/parent to build a
+        # subagent's durable address; hand the roster over before selecting.
+        setter = getattr(self.thread, "set_session_addresses", None)
+        if callable(setter):
+            try:
+                setter(sessions)
+            except Exception as exc:  # pragma: no cover - defensive
+                self.last_error = f"session address sync failed: {exc}"
         previously_running = self._was_running
         previous_session = self._active_session
         target = None
