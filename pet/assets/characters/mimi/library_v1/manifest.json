@@ -29,9 +29,7 @@
         "usable/actions/fun_facepalm/frames/0007.webp",
         "usable/actions/fun_facepalm/frames/0008.webp",
         "usable/actions/fun_facepalm/frames/0009.webp",
-        "usable/actions/fun_facepalm/frames/0010.webp",
-        "usable/actions/fun_facepalm/frames/0011.webp",
-        "usable/actions/fun_facepalm/frames/0012.webp"
+        "usable/actions/fun_facepalm/frames/0010.webp"
       ],
       "duration_ms": [
         180,
@@ -43,9 +41,7 @@
         260,
         300,
         240,
-        260,
-        220,
-        340
+        260
       ],
       "loop": false,
       "trigger": "ai_failure",
@@ -76,9 +72,7 @@
         "usable/actions/land_recover_v4_12/frames/0007.webp",
         "usable/actions/land_recover_v4_12/frames/0008.webp",
         "usable/actions/land_recover_v4_12/frames/0009.webp",
-        "usable/actions/land_recover_v4_12/frames/0010.webp",
-        "usable/actions/land_recover_v4_12/frames/0011.webp",
-        "usable/actions/land_recover_v4_12/frames/0012.webp"
+        "usable/actions/land_recover_v4_12/frames/0010.webp"
       ],
       "duration_ms": [
         85,
@@ -90,9 +84,7 @@
         105,
         82,
         85,
-        90,
-        105,
-        180
+        90
       ],
       "loop": false,
       "trigger": "ground_collision",
@@ -127,9 +119,7 @@
         "usable/actions/harness_task_thinking_v1_12/frames/0007.webp",
         "usable/actions/harness_task_thinking_v1_12/frames/0008.webp",
         "usable/actions/harness_task_thinking_v1_12/frames/0009.webp",
-        "usable/actions/harness_task_thinking_v1_12/frames/0010.webp",
-        "usable/actions/harness_task_thinking_v1_12/frames/0011.webp",
-        "usable/actions/harness_task_thinking_v1_12/frames/0012.webp"
+        "usable/actions/harness_task_thinking_v1_12/frames/0010.webp"
       ],
       "duration_ms": [
         300,
@@ -141,9 +131,7 @@
         450,
         420,
         390,
-        360,
-        300,
-        450
+        360
       ],
       "loop": false,
       "trigger": "dsh_activity",
@@ -178,9 +166,7 @@
         "usable/actions/harness_tool_working_v1_12/frames/0007.webp",
         "usable/actions/harness_tool_working_v1_12/frames/0008.webp",
         "usable/actions/harness_tool_working_v1_12/frames/0009.webp",
-        "usable/actions/harness_tool_working_v1_12/frames/0010.webp",
-        "usable/actions/harness_tool_working_v1_12/frames/0011.webp",
-        "usable/actions/harness_tool_working_v1_12/frames/0012.webp"
+        "usable/actions/harness_tool_working_v1_12/frames/0010.webp"
       ],
       "duration_ms": [
         270,
@@ -192,9 +178,7 @@
         420,
         360,
         330,
-        300,
-        330,
-        480
+        300
       ],
       "loop": false,
       "trigger": "dsh_activity",
@@ -271,13 +255,9 @@
         "usable/actions/listen/frames/0049.webp",
         "usable/actions/listen/frames/0050.webp",
         "usable/actions/listen/frames/0051.webp",
-        "usable/actions/listen/frames/0052.webp",
-        "usable/actions/listen/frames/0053.webp",
-        "usable/actions/listen/frames/0054.webp"
+        "usable/actions/listen/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -412,13 +392,9 @@
         "usable/actions/sit_down/frames/0057.webp",
         "usable/actions/sit_down/frames/0058.webp",
         "usable/actions/sit_down/frames/0059.webp",
-        "usable/actions/sit_down/frames/0060.webp",
-        "usable/actions/sit_down/frames/0061.webp",
-        "usable/actions/sit_down/frames/0062.webp"
+        "usable/actions/sit_down/frames/0060.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -606,45 +582,9 @@
         "usable/actions/stand_up/frames/0041.webp",
         "usable/actions/stand_up/frames/0042.webp",
         "usable/actions/stand_up/frames/0043.webp",
-        "usable/actions/stand_up/frames/0044.webp",
-        "usable/actions/stand_up/frames/0045.webp",
-        "usable/actions/stand_up/frames/0046.webp",
-        "usable/actions/stand_up/frames/0047.webp",
-        "usable/actions/stand_up/frames/0048.webp",
-        "usable/actions/stand_up/frames/0049.webp",
-        "usable/actions/stand_up/frames/0050.webp",
-        "usable/actions/stand_up/frames/0051.webp",
-        "usable/actions/stand_up/frames/0052.webp",
-        "usable/actions/stand_up/frames/0053.webp",
-        "usable/actions/stand_up/frames/0054.webp",
-        "usable/actions/stand_up/frames/0055.webp",
-        "usable/actions/stand_up/frames/0056.webp",
-        "usable/actions/stand_up/frames/0057.webp",
-        "usable/actions/stand_up/frames/0058.webp",
-        "usable/actions/stand_up/frames/0059.webp",
-        "usable/actions/stand_up/frames/0060.webp",
-        "usable/actions/stand_up/frames/0061.webp",
-        "usable/actions/stand_up/frames/0062.webp"
+        "usable/actions/stand_up/frames/0044.webp"
       ],
       "duration_ms": [
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
         83,
         83,
         83,
@@ -761,67 +701,9 @@
         "usable/actions/sleep_lie_down/frames/0047.webp",
         "usable/actions/sleep_lie_down/frames/0048.webp",
         "usable/actions/sleep_lie_down/frames/0049.webp",
-        "usable/actions/sleep_lie_down/frames/0050.webp",
-        "usable/actions/sleep_lie_down/frames/0051.webp",
-        "usable/actions/sleep_lie_down/frames/0052.webp",
-        "usable/actions/sleep_lie_down/frames/0053.webp",
-        "usable/actions/sleep_lie_down/frames/0054.webp",
-        "usable/actions/sleep_lie_down/frames/0055.webp",
-        "usable/actions/sleep_lie_down/frames/0056.webp",
-        "usable/actions/sleep_lie_down/frames/0057.webp",
-        "usable/actions/sleep_lie_down/frames/0058.webp",
-        "usable/actions/sleep_lie_down/frames/0059.webp",
-        "usable/actions/sleep_lie_down/frames/0060.webp",
-        "usable/actions/sleep_lie_down/frames/0061.webp",
-        "usable/actions/sleep_lie_down/frames/0062.webp",
-        "usable/actions/sleep_lie_down/frames/0063.webp",
-        "usable/actions/sleep_lie_down/frames/0064.webp",
-        "usable/actions/sleep_lie_down/frames/0065.webp",
-        "usable/actions/sleep_lie_down/frames/0066.webp",
-        "usable/actions/sleep_lie_down/frames/0067.webp",
-        "usable/actions/sleep_lie_down/frames/0068.webp",
-        "usable/actions/sleep_lie_down/frames/0069.webp",
-        "usable/actions/sleep_lie_down/frames/0070.webp",
-        "usable/actions/sleep_lie_down/frames/0071.webp",
-        "usable/actions/sleep_lie_down/frames/0072.webp",
-        "usable/actions/sleep_lie_down/frames/0073.webp",
-        "usable/actions/sleep_lie_down/frames/0074.webp",
-        "usable/actions/sleep_lie_down/frames/0075.webp",
-        "usable/actions/sleep_lie_down/frames/0076.webp",
-        "usable/actions/sleep_lie_down/frames/0077.webp",
-        "usable/actions/sleep_lie_down/frames/0078.webp",
-        "usable/actions/sleep_lie_down/frames/0079.webp"
+        "usable/actions/sleep_lie_down/frames/0050.webp"
       ],
       "duration_ms": [
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
         83,
         83,
         83,
@@ -1104,13 +986,9 @@
         "usable/actions/wake_up/frames/0074.webp",
         "usable/actions/wake_up/frames/0075.webp",
         "usable/actions/wake_up/frames/0076.webp",
-        "usable/actions/wake_up/frames/0077.webp",
-        "usable/actions/wake_up/frames/0078.webp",
-        "usable/actions/wake_up/frames/0079.webp"
+        "usable/actions/wake_up/frames/0077.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -1560,13 +1438,9 @@
         "usable/actions/wave/frames/0049.webp",
         "usable/actions/wave/frames/0050.webp",
         "usable/actions/wave/frames/0051.webp",
-        "usable/actions/wave/frames/0052.webp",
-        "usable/actions/wave/frames/0053.webp",
-        "usable/actions/wave/frames/0054.webp"
+        "usable/actions/wave/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -1693,13 +1567,9 @@
         "usable/actions/celebrate/frames/0049.webp",
         "usable/actions/celebrate/frames/0050.webp",
         "usable/actions/celebrate/frames/0051.webp",
-        "usable/actions/celebrate/frames/0052.webp",
-        "usable/actions/celebrate/frames/0053.webp",
-        "usable/actions/celebrate/frames/0054.webp"
+        "usable/actions/celebrate/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -1821,23 +1691,9 @@
         "usable/actions/head_pat/frames/0044.webp",
         "usable/actions/head_pat/frames/0045.webp",
         "usable/actions/head_pat/frames/0046.webp",
-        "usable/actions/head_pat/frames/0047.webp",
-        "usable/actions/head_pat/frames/0048.webp",
-        "usable/actions/head_pat/frames/0049.webp",
-        "usable/actions/head_pat/frames/0050.webp",
-        "usable/actions/head_pat/frames/0051.webp",
-        "usable/actions/head_pat/frames/0052.webp",
-        "usable/actions/head_pat/frames/0053.webp",
-        "usable/actions/head_pat/frames/0054.webp"
+        "usable/actions/head_pat/frames/0047.webp"
       ],
       "duration_ms": [
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
         83,
         83,
         83,
@@ -1959,13 +1815,9 @@
         "usable/actions/belly_ticklish/frames/0049.webp",
         "usable/actions/belly_ticklish/frames/0050.webp",
         "usable/actions/belly_ticklish/frames/0051.webp",
-        "usable/actions/belly_ticklish/frames/0052.webp",
-        "usable/actions/belly_ticklish/frames/0053.webp",
-        "usable/actions/belly_ticklish/frames/0054.webp"
+        "usable/actions/belly_ticklish/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -2092,13 +1944,9 @@
         "usable/actions/cheek_poke/frames/0049.webp",
         "usable/actions/cheek_poke/frames/0050.webp",
         "usable/actions/cheek_poke/frames/0051.webp",
-        "usable/actions/cheek_poke/frames/0052.webp",
-        "usable/actions/cheek_poke/frames/0053.webp",
-        "usable/actions/cheek_poke/frames/0054.webp"
+        "usable/actions/cheek_poke/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -2224,15 +2072,9 @@
         "usable/actions/high_five/frames/0048.webp",
         "usable/actions/high_five/frames/0049.webp",
         "usable/actions/high_five/frames/0050.webp",
-        "usable/actions/high_five/frames/0051.webp",
-        "usable/actions/high_five/frames/0052.webp",
-        "usable/actions/high_five/frames/0053.webp",
-        "usable/actions/high_five/frames/0054.webp"
+        "usable/actions/high_five/frames/0051.webp"
       ],
       "duration_ms": [
-        83,
-        83,
-        83,
         83,
         83,
         83,
@@ -2358,13 +2200,9 @@
         "usable/actions/file_drop_receive/frames/0049.webp",
         "usable/actions/file_drop_receive/frames/0050.webp",
         "usable/actions/file_drop_receive/frames/0051.webp",
-        "usable/actions/file_drop_receive/frames/0052.webp",
-        "usable/actions/file_drop_receive/frames/0053.webp",
-        "usable/actions/file_drop_receive/frames/0054.webp"
+        "usable/actions/file_drop_receive/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -2486,23 +2324,9 @@
         "usable/actions/feed_bread/frames/0044.webp",
         "usable/actions/feed_bread/frames/0045.webp",
         "usable/actions/feed_bread/frames/0046.webp",
-        "usable/actions/feed_bread/frames/0047.webp",
-        "usable/actions/feed_bread/frames/0048.webp",
-        "usable/actions/feed_bread/frames/0049.webp",
-        "usable/actions/feed_bread/frames/0050.webp",
-        "usable/actions/feed_bread/frames/0051.webp",
-        "usable/actions/feed_bread/frames/0052.webp",
-        "usable/actions/feed_bread/frames/0053.webp",
-        "usable/actions/feed_bread/frames/0054.webp"
+        "usable/actions/feed_bread/frames/0047.webp"
       ],
       "duration_ms": [
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
-        83,
         83,
         83,
         83,
@@ -2624,13 +2448,9 @@
         "usable/actions/feed_refuse/frames/0049.webp",
         "usable/actions/feed_refuse/frames/0050.webp",
         "usable/actions/feed_refuse/frames/0051.webp",
-        "usable/actions/feed_refuse/frames/0052.webp",
-        "usable/actions/feed_refuse/frames/0053.webp",
-        "usable/actions/feed_refuse/frames/0054.webp"
+        "usable/actions/feed_refuse/frames/0052.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -2740,13 +2560,9 @@
         "usable/actions/nod/frames/0032.webp",
         "usable/actions/nod/frames/0033.webp",
         "usable/actions/nod/frames/0034.webp",
-        "usable/actions/nod/frames/0035.webp",
-        "usable/actions/nod/frames/0036.webp",
-        "usable/actions/nod/frames/0037.webp"
+        "usable/actions/nod/frames/0035.webp"
       ],
       "duration_ms": [
-        83,
-        83,
         83,
         83,
         83,
@@ -3120,5 +2936,6 @@
     "walk_slow_left",
     "walk_slow_right",
     "yawn"
-  ]
+  ],
+  "expansion_manifest": "../expansion_v1/actions.json"
 }

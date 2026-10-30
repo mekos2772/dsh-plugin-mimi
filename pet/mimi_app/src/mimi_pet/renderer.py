@@ -103,6 +103,9 @@ def build_snapshot(frame: EngineFrame, engine: PetEngine, display_size: tuple[in
     )
     drag_pose = frame.state is PetState.DRAGGING and frame.drag_pose_path is not None
     drag = frame.drag if frame.state is PetState.DRAGGING else None
+    # 预设造型只在待机时接管画面；走路/拖拽/落地仍用正式素材，
+    # 避免展示造型借用默认衣服的动作帧造成“换装后突然变回原样”。
+    outfit_frame = frame.outfit_frame if frame.state is PetState.IDLE else None
     if frame.state is PetState.FALLING:
         tilt = _clamp(-frame.vx / 1000.0 * 12.0, -12.0, 12.0)
         hair_lag = _clamp(tilt * 0.85, -10.0, 10.0)
@@ -114,7 +117,10 @@ def build_snapshot(frame: EngineFrame, engine: PetEngine, display_size: tuple[in
     else:
         tilt = hair_lag = skirt_lag = 0.0
     total = len(engine.player.action.frames) if engine.player.action else None
-    if full_frame:
+    if outfit_frame is not None:
+        mode, path, index = "full_frame", outfit_frame, None
+        registration_scale = registration_scale_y = 1.0
+    elif full_frame:
         mode, path, index = "full_frame", frame.sprite.path, frame.sprite.index
         action = engine.player.action
         registration_scale = action.registration_scale if action else 1.0

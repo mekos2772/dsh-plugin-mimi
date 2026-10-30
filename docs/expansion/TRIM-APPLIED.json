@@ -1,0 +1,1414 @@
+{
+  "schema_version": 1,
+  "generated_by": "scripts/pipeline/trim_tails.py",
+  "generated_at": "2026-10-29T20:40:01+0800",
+  "mode": "apply",
+  "base": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi",
+  "decisions_file": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/docs/expansion/trim_decisions.json",
+  "decisions_count": 59,
+  "summary": {
+    "trimmed": 59,
+    "noop": 0,
+    "skipped": 0,
+    "frames_before": 3387,
+    "frames_after": 3310,
+    "ms_before": 290021,
+    "ms_after": 282512,
+    "moved_files": 77,
+    "freed_bytes": 2241940,
+    "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed"
+  },
+  "entries": [
+    {
+      "library": "library_v1",
+      "id": "fun_facepalm",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.0602，P=2.005，N=12",
+      "note": "",
+      "keep_frames": 11,
+      "before_frames": 12,
+      "after_frames": 11,
+      "before_ms": 2800,
+      "after_ms": 2460,
+      "moved_files": 1,
+      "freed_bytes": 52526,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/fun_facepalm",
+      "moved_names": [
+        "0012.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "land_recover_v4_12",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.4317，P=14.3891，N=12",
+      "note": "",
+      "keep_frames": 11,
+      "before_frames": 12,
+      "after_frames": 11,
+      "before_ms": 1114,
+      "after_ms": 934,
+      "moved_files": 1,
+      "freed_bytes": 58250,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/land_recover_v4_12",
+      "moved_names": [
+        "0012.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_task_thinking_v1_12",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.0649，P=2.1621，N=12",
+      "note": "",
+      "keep_frames": 11,
+      "before_frames": 12,
+      "after_frames": 11,
+      "before_ms": 4590,
+      "after_ms": 4140,
+      "moved_files": 1,
+      "freed_bytes": 62798,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/harness_task_thinking_v1_12",
+      "moved_names": [
+        "0012.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_tool_working_v1_12",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.0986，P=3.2877，N=12",
+      "note": "",
+      "keep_frames": 11,
+      "before_frames": 12,
+      "after_frames": 11,
+      "before_ms": 4380,
+      "after_ms": 3900,
+      "moved_files": 1,
+      "freed_bytes": 60168,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/harness_tool_working_v1_12",
+      "moved_names": [
+        "0012.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "listen",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0309，P=1.0312，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 43714,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/listen",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_down",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0349，P=1.1635，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 40028,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/sit_down",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "stand_up",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0978，P=3.2603，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 45038,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/stand_up",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_lie_down",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=59，keep=last_motion+1；thr=0.0984，P=3.2785，N=79",
+      "note": "",
+      "keep_frames": 60,
+      "before_frames": 79,
+      "after_frames": 60,
+      "before_ms": 6557,
+      "after_ms": 4980,
+      "moved_files": 19,
+      "freed_bytes": 682638,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/sleep_lie_down",
+      "moved_names": [
+        "0061.webp",
+        "0062.webp",
+        "0063.webp",
+        "0064.webp",
+        "0065.webp",
+        "0066.webp",
+        "0067.webp",
+        "0068.webp",
+        "0069.webp",
+        "0070.webp",
+        "0071.webp",
+        "0072.webp",
+        "0073.webp",
+        "0074.webp",
+        "0075.webp",
+        "0076.webp",
+        "0077.webp",
+        "0078.webp",
+        "0079.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "wake_up",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=77，keep=last_motion+1；thr=0.141，P=4.6992，N=79",
+      "note": "",
+      "keep_frames": 78,
+      "before_frames": 79,
+      "after_frames": 78,
+      "before_ms": 6557,
+      "after_ms": 6474,
+      "moved_files": 1,
+      "freed_bytes": 47246,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/wake_up",
+      "moved_names": [
+        "0079.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "wave",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0278，P=0.9272，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 44320,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/wave",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "celebrate",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.1234，P=4.1141，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 41972,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/celebrate",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "head_pat",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0452，P=1.5082，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 42494,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/head_pat",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "belly_ticklish",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0389，P=1.2968，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 43282,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/belly_ticklish",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "cheek_poke",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0355，P=1.1823，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 42286,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/cheek_poke",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "high_five",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0392，P=1.3059，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 41584,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/high_five",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "file_drop_receive",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0292，P=0.9748，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 44884,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/file_drop_receive",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_bread",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0596，P=1.9857，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 43140,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/feed_bread",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_refuse",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0323，P=1.0773，N=54",
+      "note": "",
+      "keep_frames": 53,
+      "before_frames": 54,
+      "after_frames": 53,
+      "before_ms": 4482,
+      "after_ms": 4399,
+      "moved_files": 1,
+      "freed_bytes": 40754,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/feed_refuse",
+      "moved_names": [
+        "0054.webp"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "nod",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=35，keep=last_motion+1；thr=0.0407，P=1.357，N=37",
+      "note": "",
+      "keep_frames": 36,
+      "before_frames": 37,
+      "after_frames": 36,
+      "before_ms": 3071,
+      "after_ms": 2988,
+      "moved_files": 1,
+      "freed_bytes": 42930,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/library_v1/nod",
+      "moved_names": [
+        "0037.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0548，P=1.8267，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17374,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/stretch",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_water",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0281，P=0.9351，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17312,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/drink_water",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_note",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.05，P=1.6671，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17324,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/peek_note",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "think_pencil",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0306，P=1.0189，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 26688,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/think_pencil",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_desk",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1169，P=3.8952，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18568,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/tidy_desk",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "ribbon_adjust",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0432，P=1.439，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17092,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/ribbon_adjust",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "turn_show",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.2159，P=7.1955，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 15828,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/turn_show",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "search_pocket",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0572，P=1.9072，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17916,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/search_pocket",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "push_ball",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1051，P=3.5022，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 25466,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/push_ball",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "catch_star",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0393，P=1.3106，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17436,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/catch_star",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "headphone",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1143，P=3.8091，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18648,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/headphone",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "lantern_off",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0942，P=3.1406，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17582,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/lantern_off",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_hello",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0651，P=2.1708，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17448,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/wave_hello",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "nod_yes",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0331，P=1.1042，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17080,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/nod_yes",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shake_head",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0345，P=1.1484，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17288,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/shake_head",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "yawn",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.047，P=1.5674，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17384,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/yawn",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cheer_jump",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1732，P=5.774，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17322,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/cheer_jump",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_tilt",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0438，P=1.4603，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17902,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/listen_tilt",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shy_look",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0371，P=1.2383，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17414,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/shy_look",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "clap_happy",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.052，P=1.7323，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17040,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/clap_happy",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "bow",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0901，P=3.0037，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17216,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/bow",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "point_forward",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0981，P=3.2702，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17280,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/point_forward",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0419，P=1.3958，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 16894,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/look_up",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cover_mouth",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0509，P=1.6955，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17118,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/cover_mouth",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "pat_own_chest",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0328，P=1.0934，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 16930,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/pat_own_chest",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_hair",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0211，P=0.7045，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17190,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/tidy_hair",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.2119，P=7.0637，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18490,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/sit_stretch",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "kneel_look",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.209，P=6.9659，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18460,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/kneel_look",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sleepy_nod",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1299，P=4.3307，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18598,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/sleepy_nod",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "happy_sway",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0581，P=1.9352，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17530,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/happy_sway",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_left",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1045，P=3.4826，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17410,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/peek_left",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_right",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0867，P=2.8908，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17276,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/peek_right",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spin_cheer",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.09，P=3.0007，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17160,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/spin_cheer",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_tea",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0304，P=1.0128，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17120,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/drink_tea",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch_back",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0518，P=1.7278，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17938,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/stretch_back",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0398，P=1.3262，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18048,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/shrug",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.057，P=1.8989，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18120,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/salute",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1229，P=4.0965，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 21226,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/wave_both",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "hug_self",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0697，P=2.3223，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 17656,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/hug_self",
+      "moved_names": [
+        "0062.webp"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_sad",
+      "status": "trimmed",
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.046，P=1.5325，N=62",
+      "note": "",
+      "keep_frames": 61,
+      "before_frames": 62,
+      "after_frames": 61,
+      "before_ms": 5146,
+      "after_ms": 5063,
+      "moved_files": 1,
+      "freed_bytes": 18116,
+      "isolation_dir": "/Volumes/isci肥牛/zhuoc/dsh-plugin-mimi/pet/assets/characters/mimi/.trimmed/expansion_v1/look_down_sad",
+      "moved_names": [
+        "0062.webp"
+      ]
+    }
+  ],
+  "derived_rebuild": {
+    "ran": true,
+    "exit_code": 0,
+    "changed": [
+      "tidy_desk_reverse",
+      "wave_slow",
+      "nod_slow",
+      "listen_pingpong",
+      "happy_sway_pingpong",
+      "stretch_hold",
+      "drink_water_hold",
+      "salute_hold",
+      "shrug_pingpong",
+      "look_up_slow",
+      "cover_mouth_slow",
+      "pat_chest_hold",
+      "tidy_hair_pingpong",
+      "spring_reverse",
+      "sit_stretch_hold",
+      "peek_left_reverse",
+      "peek_right_reverse",
+      "spin_cheer_slow",
+      "wave_both_slow",
+      "hug_self_pingpong",
+      "sleepy_nod_pingpong",
+      "drink_tea_hold",
+      "headphone_hold",
+      "look_down_hold"
+    ],
+    "output_tail": [
+      "[ok] wave_both_slow: 122 帧（61 个唯一文件, slow）",
+      "[ok] hug_self_pingpong: 120 帧（61 个唯一文件, pingpong）",
+      "[ok] sleepy_nod_pingpong: 120 帧（61 个唯一文件, pingpong）",
+      "[ok] drink_tea_hold: 69 帧（61 个唯一文件, hold）",
+      "[ok] headphone_hold: 69 帧（61 个唯一文件, hold）",
+      "[ok] look_down_hold: 69 帧（61 个唯一文件, hold）",
+      "合计 2248 帧",
+      "manifest: +24 条，共 64"
+    ],
+    "note": "",
+    "derived": [
+      {
+        "id": "tidy_desk_reverse",
+        "source": "tidy_desk",
+        "mode": "reverse",
+        "before_frames": 62,
+        "after_frames": 61,
+        "after_unique_files": 61,
+        "after_bytes": 1070472,
+        "note": "",
+        "actual_frames": 61
+      },
+      {
+        "id": "wave_slow",
+        "source": "wave_hello",
+        "mode": "slow",
+        "before_frames": 124,
+        "after_frames": 122,
+        "after_unique_files": 61,
+        "after_bytes": 1071132,
+        "note": "",
+        "actual_frames": 122
+      },
+      {
+        "id": "nod_slow",
+        "source": "nod_yes",
+        "mode": "slow",
+        "before_frames": 124,
+        "after_frames": 122,
+        "after_unique_files": 61,
+        "after_bytes": 1051458,
+        "note": "",
+        "actual_frames": 122
+      },
+      {
+        "id": "listen_pingpong",
+        "source": "listen_tilt",
+        "mode": "pingpong",
+        "before_frames": 122,
+        "after_frames": 120,
+        "after_unique_files": 61,
+        "after_bytes": 1096642,
+        "note": "",
+        "actual_frames": 120
+      },
+      {
+        "id": "happy_sway_pingpong",
+        "source": "happy_sway",
+        "mode": "pingpong",
+        "before_frames": 122,
+        "after_frames": 120,
+        "after_unique_files": 61,
+        "after_bytes": 1058926,
+        "note": "",
+        "actual_frames": 120
+      },
+      {
+        "id": "stretch_hold",
+        "source": "stretch",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1057194,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "drink_water_hold",
+        "source": "drink_water",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1055264,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "salute_hold",
+        "source": "salute",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1103142,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "shrug_pingpong",
+        "source": "shrug",
+        "mode": "pingpong",
+        "before_frames": 122,
+        "after_frames": 120,
+        "after_unique_files": 61,
+        "after_bytes": 1086430,
+        "note": "",
+        "actual_frames": 120
+      },
+      {
+        "id": "look_up_slow",
+        "source": "look_up",
+        "mode": "slow",
+        "before_frames": 124,
+        "after_frames": 122,
+        "after_unique_files": 61,
+        "after_bytes": 1031094,
+        "note": "",
+        "actual_frames": 122
+      },
+      {
+        "id": "cover_mouth_slow",
+        "source": "cover_mouth",
+        "mode": "slow",
+        "before_frames": 124,
+        "after_frames": 122,
+        "after_unique_files": 61,
+        "after_bytes": 1056952,
+        "note": "",
+        "actual_frames": 122
+      },
+      {
+        "id": "pat_chest_hold",
+        "source": "pat_own_chest",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1045748,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "tidy_hair_pingpong",
+        "source": "tidy_hair",
+        "mode": "pingpong",
+        "before_frames": 122,
+        "after_frames": 120,
+        "after_unique_files": 61,
+        "after_bytes": 1058090,
+        "note": "",
+        "actual_frames": 120
+      },
+      {
+        "id": "spring_reverse",
+        "source": "cheer_jump",
+        "mode": "reverse",
+        "before_frames": 62,
+        "after_frames": 61,
+        "after_unique_files": 61,
+        "after_bytes": 1053200,
+        "note": "",
+        "actual_frames": 61
+      },
+      {
+        "id": "sit_stretch_hold",
+        "source": "sit_stretch",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1107582,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "peek_left_reverse",
+        "source": "peek_left",
+        "mode": "reverse",
+        "before_frames": 62,
+        "after_frames": 61,
+        "after_unique_files": 61,
+        "after_bytes": 1025948,
+        "note": "",
+        "actual_frames": 61
+      },
+      {
+        "id": "peek_right_reverse",
+        "source": "peek_right",
+        "mode": "reverse",
+        "before_frames": 62,
+        "after_frames": 61,
+        "after_unique_files": 61,
+        "after_bytes": 1025572,
+        "note": "",
+        "actual_frames": 61
+      },
+      {
+        "id": "spin_cheer_slow",
+        "source": "spin_cheer",
+        "mode": "slow",
+        "before_frames": 124,
+        "after_frames": 122,
+        "after_unique_files": 61,
+        "after_bytes": 923460,
+        "note": "",
+        "actual_frames": 122
+      },
+      {
+        "id": "wave_both_slow",
+        "source": "wave_both",
+        "mode": "slow",
+        "before_frames": 124,
+        "after_frames": 122,
+        "after_unique_files": 61,
+        "after_bytes": 1008510,
+        "note": "",
+        "actual_frames": 122
+      },
+      {
+        "id": "hug_self_pingpong",
+        "source": "hug_self",
+        "mode": "pingpong",
+        "before_frames": 122,
+        "after_frames": 120,
+        "after_unique_files": 61,
+        "after_bytes": 1080200,
+        "note": "",
+        "actual_frames": 120
+      },
+      {
+        "id": "sleepy_nod_pingpong",
+        "source": "sleepy_nod",
+        "mode": "pingpong",
+        "before_frames": 122,
+        "after_frames": 120,
+        "after_unique_files": 61,
+        "after_bytes": 1115188,
+        "note": "",
+        "actual_frames": 120
+      },
+      {
+        "id": "drink_tea_hold",
+        "source": "drink_tea",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1052180,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "headphone_hold",
+        "source": "headphone",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1140652,
+        "note": "",
+        "actual_frames": 69
+      },
+      {
+        "id": "look_down_hold",
+        "source": "look_down_sad",
+        "mode": "hold",
+        "before_frames": 70,
+        "after_frames": 69,
+        "after_unique_files": 61,
+        "after_bytes": 1109510,
+        "note": "",
+        "actual_frames": 69
+      }
+    ]
+  },
+  "selfcheck": {
+    "ok": true,
+    "problems": []
+  }
+}

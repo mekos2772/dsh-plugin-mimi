@@ -1,0 +1,9 @@
+# 运行时日志与临时产物
+*.log
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+.pytest_cache/
+# 素材隔离区（被判为错素材的旧帧，仅本地留档，不进仓库）
+pet/assets/characters/mimi/.trimmed/

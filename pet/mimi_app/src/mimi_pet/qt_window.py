@@ -23,6 +23,8 @@ from PySide6.QtWidgets import QMenu, QSlider, QWidget, QWidgetAction
 from .collision import WorkArea, ground_for_point
 from .debug_overlay import draw_debug_overlay
 from .engine import PetEngine, touch_region
+from .glass_menu import LIQUID_GLASS_QSS, GlassMenu, submenu
+from .scene_draw import draw_scene_item, draw_toy, draw_toy_bar
 from . import menu_labels
 
 # Dropped picture files count as treats (bread) for the pet.
@@ -34,6 +36,9 @@ from .state_machine import PetState
 class MimiWindow(QWidget):
     closed = Signal()
     head_hovered = Signal(bool)
+    # 需要弹出卡片的功能入口（便签/任务/收尾），具体 UI 由 qt_app 接。
+    feature_requested = Signal(str)
+    bubble_requested = Signal(str, str)
 
     def __init__(
         self,
@@ -52,6 +57,14 @@ class MimiWindow(QWidget):
         self.dsh = None
         self.companion = None
         self.media = None
+        # 预设造型服务，由 qt_app 装配时注入；None 表示不提供造型功能。
+        self.outfits = None
+        # 玩具盒状态（F06），由 qt_app 每帧写入。
+        self._toy_state = None
+        self._drag_scene_item = None
+        self._drag_scene_origin = None
+        # F01–F08 的总服务，由 qt_app 注入。
+        self.hub = None
         self._snapshot: RenderSnapshot | None = None
         self._pixmap = None
         self.debug_enabled = False
@@ -89,6 +102,8 @@ class MimiWindow(QWidget):
         self.resize(engine.display_w, engine.display_h)
         self.setMouseTracking(True)
         self.setAcceptDrops(True)
+        # Keep the non-blocking popup alive until Qt closes it.
+        self._active_context_menu: QMenu | None = None
         # True while the context menu owns the pointer; the per-tick layout
         # pass must not move this window or raise another top-level one then.
         self.menu_open = False
@@ -98,17 +113,72 @@ class MimiWindow(QWidget):
     def show_frame(self, snapshot: RenderSnapshot, pixmap) -> None:
         self._snapshot = snapshot
         self._pixmap = pixmap
-        self.update()
+        # On macOS, deferred updates for this transparent always-on-top window
+        # can remain visually stale until another window exposes it. The frame
+        # is already composed at the tick rate, so paint it before returning.
+        self.repaint()
+
+    def current_pixmap(self):
+        """最后成功合成的一帧；渲染抛异常时用它顶住画面。"""
+        return self._pixmap
 
     def paintEvent(self, event) -> None:  # noqa: N802 (Qt override)
         painter = QPainter(self)
+        # 层级：后景布景 → 角色 → 前景布景 → 玩具 → 气泡
+        self._draw_scene(painter, behind=True)
         if self._pixmap is not None:
             painter.drawPixmap(0, 0, self._pixmap)
+        self._draw_scene(painter, behind=False)
+        self._draw_toys(painter)
         if self.debug_enabled and self._snapshot is not None:
             draw_debug_overlay(painter, self.rect(), self._snapshot)
         if self._snapshot is not None and self._snapshot.bubble_text:
             self._draw_bubble(painter, self._snapshot.bubble_text)
         painter.end()
+
+    def _scene_origin(self) -> tuple[float, float]:
+        """布景参考原点：窗口内角色脚底位置。
+
+        必须用窗口坐标，不能用引擎的世界坐标：引擎 root 是屏幕坐标，
+        直接拿来画会把物件推出窗口外（表现为"物件消失"）。
+        """
+        engine = self.engine
+        return (self.width() / 2.0, float(engine.pivot_display_y))
+
+    def _draw_scene(self, painter: QPainter, *, behind: bool) -> None:
+        """画 F07 的小布景。物件按 z 分到角色前后两层。"""
+        hub = self.hub
+        if hub is None:
+            return
+        scene = hub.scene
+        if not scene.is_visible or not scene.scene.items:
+            return
+        ox, oy = self._scene_origin()
+        # 窗口只包住角色，物件很容易落在外框之外被裁掉；
+        # 绘制前把位置夹进窗口内，保证用户永远看得见自己摆的东西。
+        margin = 26.0
+        for item in scene.scene.items:
+            is_behind = item.z < 0
+            if is_behind != behind:
+                continue
+            x = min(max(ox + item.offset_x, margin), self.width() - margin)
+            y = min(max(oy + item.offset_y, margin), self.height() - 6.0)
+            draw_scene_item(
+                painter,
+                item.asset_id,
+                QPointF(x, y),
+                max(0.4, min(3.0, item.scale)),
+                light_on=item.light_on,
+            )
+
+    def _draw_toys(self, painter: QPainter) -> None:
+        """画 F06 的玩具对象与剩余时间条。"""
+        state = self._toy_state
+        if not state or not state.get("active"):
+            return
+        for obj in state.get("objects", []):
+            draw_toy(painter, obj)
+        draw_toy_bar(painter, float(state.get("remaining_s", 0.0)), self.width())
 
     def _draw_bubble(self, painter: QPainter, text: str) -> None:
         """Speech bubble above the character's head."""
@@ -172,7 +242,55 @@ class MimiWindow(QWidget):
         image = self._pixmap.toImage()
         return image.pixelColor(local_pos).alpha() > 0
 
+    def _hit_toy(self, pos) -> bool:
+        """点击是否落在玩具对象上（半径内）。
+
+        玩具优先于角色命中：否则小球滚到脚下时永远点不到，
+        用户会以为按钮坏了。
+        """
+        state = self._toy_state
+        if not state or not state.get("active"):
+            return False
+        for obj in state.get("objects", []):
+            dx = float(pos.x()) - float(obj.get("x", 0.0))
+            dy = float(pos.y()) - float(obj.get("y", 0.0))
+            if dx * dx + dy * dy <= 16.0 * 16.0:
+                return True
+        return False
+
+    def _hit_scene_item(self, pos):
+        """编辑模式下的物件命中：返回最近的一个物件。"""
+        hub = self.hub
+        if hub is None or not hub.scene.editing or not hub.scene.is_visible:
+            return None
+        ox, oy = self._scene_origin()
+        best = None
+        best_d2 = 30.0 * 30.0
+        for item in hub.scene.scene.items:
+            dx = float(pos.x()) - (ox + item.offset_x)
+            dy = float(pos.y()) - (oy + item.offset_y)
+            d2 = dx * dx + dy * dy
+            if d2 <= best_d2:
+                best, best_d2 = item, d2
+        return best
+
     def mousePressEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        if event.button() == Qt.MouseButton.LeftButton and self.hub is not None:
+            item = self._hit_scene_item(event.position())
+            if item is not None:
+                self._drag_scene_item = item
+                self._drag_scene_origin = event.position()
+                event.accept()
+                return
+        if event.button() == Qt.MouseButton.LeftButton and self._hit_toy(event.position()):
+            toy = self.hub.toys if self.hub is not None else None
+            if toy is not None:
+                if toy.session.toy == "ball":
+                    toy.push_ball()
+                else:
+                    toy.catch_star()
+            event.accept()
+            return
         if event.button() == Qt.MouseButton.LeftButton and self._visible_at(event.position().toPoint()):
             self._dragging = True
             self._press_armed = True
@@ -193,6 +311,19 @@ class MimiWindow(QWidget):
         cursor = QCursor.pos()
         self._begin_drag(float(cursor.x()), float(cursor.y()))
 
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        item = getattr(self, "_drag_scene_item", None)
+        if item is not None and self.hub is not None:
+            origin = self._drag_scene_origin
+            self.hub.scene.move_item(
+                item.id,
+                event.position().x() - origin.x(),
+                event.position().y() - origin.y(),
+            )
+            self._drag_scene_origin = event.position()
+            self.update()
+            event.accept()
+            return
     def mouseMoveEvent(self, event) -> None:  # noqa: N802 (Qt override)
         self._set_head_hovered(self._is_head_at(event.position().toPoint()))
         if self.engine.states.state is PetState.DRAGGING:
@@ -220,6 +351,11 @@ class MimiWindow(QWidget):
             event.accept()
 
     def mouseReleaseEvent(self, event) -> None:  # noqa: N802 (Qt override)
+        if getattr(self, "_drag_scene_item", None) is not None:
+            # 拖动物件结束：清掉引用，不触发角色拖拽逻辑。
+            self._drag_scene_item = None
+            event.accept()
+            return
         if event.button() == Qt.MouseButton.RightButton:
             # Open on release: a popup shown while the button is still held is
             # dismissed again by the button-up that follows.
@@ -299,108 +435,396 @@ class MimiWindow(QWidget):
 
     # ------------------------------------------------------------------ menu
 
-    MENU_QSS = """
-    QMenu {
-        background-color: rgba(25, 30, 48, 248);
-        border: 1px solid rgba(126, 151, 218, 85);
-        border-radius: 12px;
-        padding: 7px;
-        font-family: "Microsoft YaHei UI", "Microsoft YaHei";
-        font-size: 12px;
-    }
-    QMenu::item {
-        background: transparent;
-        color: #edf2ff;
-        padding: 7px 30px 7px 13px;
-        border-radius: 7px;
-        margin: 1px 3px;
-    }
-    QMenu::item:selected {
-        background: rgba(95, 134, 237, 165);
-    }
-    QMenu::item:disabled {
-        color: #69738f;
-    }
-    QMenu::separator {
-        height: 1px;
-        background: rgba(126, 151, 218, 55);
-        margin: 5px 12px;
-    }
-    QMenu::indicator {
-        width: 14px;
-        height: 14px;
-        margin-left: 4px;
-    }
-    QMenu::indicator:checked {
-        image: none;
-        background: #7198ff;
-        border-radius: 3px;
-    }
-    """
+    MENU_QSS = LIQUID_GLASS_QSS
 
     def _show_context_menu(self, global_pos: QPoint) -> None:
         if self.engine.states.state in (PetState.DRAGGING, PetState.FALLING):
             return
+        # 菜单已经在开的时候再开一次，会让 AppKit 的菜单追踪拿到错乱的
+        # NSEvent，直接 NSAssertionHandler abort（实测崩过）。
+        if self.menu_open:
+            return
         menu = self._build_context_menu()
-        # The per-tick layout pass reads this to hold still while the menu is up.
+        # QMenu.exec() enters a nested native event loop on macOS. Use popup()
+        # so pet animation and input remain on the regular Qt event loop.
+        self._active_context_menu = menu
         self.menu_open = True
-        try:
-            menu.exec(global_pos)
-        finally:
+
+        def _on_menu_hidden() -> None:
             self.menu_open = False
+            if self._active_context_menu is menu:
+                self._active_context_menu = None
+            menu.deleteLater()
 
-    def _build_context_menu(self) -> QMenu:
-        """Assemble the right-click menu without showing it.
+        menu.aboutToHide.connect(_on_menu_hidden)
+        menu.popup(global_pos)
 
-        Split from the exec loop so tests can inspect the popup — ``exec``
-        enters a nested event loop that only a real dismissal exits, which
-        cannot happen under an offscreen test platform.
+    # ------------------------------------------------------ 菜单分组
+
+    def _menu_header(self, menu: QMenu, title: str, status: str = "", counts: str = "") -> None:
+        """菜单顶部的只读状态区。
+
+        用 QWidgetAction 而不是禁用的 QAction：后者会继承 disabled 的灰色，
+        在一堆可点条目里看起来像"坏了"。分成三行——名字、当前状态、计数——
+        这样长状态不会把计数挤掉。
         """
-        menu = QMenu(self)
-        menu.setStyleSheet(self.MENU_QSS)
-        # The pet, the input capsule and the bubble layer are all
-        # WindowStaysOnTopHint. Without the same flag the popup loses to them
-        # and is dismissed as soon as the pointer leaves the pet on its way in.
-        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
-        # A single long runtime row (track title, focus label, DSH error)
-        # used to widen the popup to screen width. The labels are capped in
-        # menu_labels; this ceiling catches anything that slips past them.
-        menu_labels.cap_width(menu)
+        from PySide6.QtWidgets import QLabel, QVBoxLayout
 
-        # 动作一律由交互触发（分区点击/双击/拖放/DSH 事件/久坐久睡场景），
-        # 菜单只保留功能入口：投喂、尺寸与位置、Harness。
-        feed_action = menu.addAction("投喂圆面包")
-        feed_action.triggered.connect(self.engine.feed_bread)
-        menu.addSeparator()
+        from PySide6.QtGui import QPalette
+
+        action = QWidgetAction(menu)
+        box = QWidget()
+        # QWidgetAction 的容器默认会用系统窗口色填充，在玻璃面板上就是一块
+        # 方角白底。三个开关都要关：样式、系统背景、调色板。
+        box.setStyleSheet("background: transparent; border: none;")
+        box.setAutoFillBackground(False)
+        box.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+        box.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        palette = box.palette()
+        palette.setColor(QPalette.ColorRole.Window, QColor(0, 0, 0, 0))
+        palette.setColor(QPalette.ColorRole.Base, QColor(0, 0, 0, 0))
+        box.setPalette(palette)
+        column = QVBoxLayout(box)
+        column.setContentsMargins(12, 4, 12, 6)
+        column.setSpacing(1)
+        head = QLabel(title)
+        # 浅色玻璃底上必须用深色文字；沿用深色主题的浅灰会几乎看不见。
+        head.setStyleSheet("color:#16203a; font-size:13px; font-weight:600;")
+        column.addWidget(head)
+        if status:
+            line = QLabel(menu_labels.short_label(status, limit=30))
+            line.setStyleSheet("color:#5f6b85; font-size:11px;")
+            line.setToolTip(status)
+            column.addWidget(line)
+        if counts:
+            line = QLabel(counts)
+            line.setStyleSheet("color:#7c88a3; font-size:11px;")
+            column.addWidget(line)
+        action.setDefaultWidget(box)
+        menu.addAction(action)
+
+    def _menu_status(self) -> tuple[str, str]:
+        """返回 (当前状态, 计数行)。两行分开，避免互相挤掉。"""
+        status = ""
+        counts = ""
         if self.companion is not None:
-            self.companion.build_menu(menu)
-        if self.media is not None:
-            self.media.build_menu(menu)
+            text = self.companion.service.status_text() if hasattr(self.companion, "service") else ""
+            status = (text or "").rstrip("。")
+        hub = self.hub
+        if hub is not None:
+            parts: list[str] = []
+            notes = hub.notes.count()
+            if notes:
+                parts.append(f"便签 {notes}")
+            task = hub.tasks.active()
+            if task is not None:
+                parts.append(f"任务 {task.progress_text}")
+            counts = " · ".join(parts)
+        return status, counts
 
-        # 尺寸、停靠和调试显示集中到一个设置菜单。
-        settings_menu = menu.addMenu("尺寸与位置")
-        settings_menu.setStyleSheet(self.MENU_QSS)
-        menu_labels.cap_width(settings_menu)
-        size_group = QActionGroup(settings_menu)
+    def _build_companion_menu(self, parent: QMenu) -> QMenu:
+        """陪她一会儿：投喂、玩具、跟听、小空间——都是"一起做点什么"。"""
+        sub = submenu(parent, "陪她一会儿")
+        sub.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(sub)
+
+        feed = sub.addAction("投喂圆面包")
+        feed.triggered.connect(self.engine.feed_bread)
+
+        hub = self.hub
+        if hub is None:
+            return sub
+
+        sub.addSeparator()
+        if hub.toys.active:
+            stop = sub.addAction("玩具收好了")
+            stop.triggered.connect(lambda: self._hub_say(hub.stop_toy("user")))
+        else:
+            ball = sub.addAction("滚小球（20 秒）")
+            ball.triggered.connect(lambda: self._start_toy("ball"))
+            star = sub.addAction("接纸星（20 秒）")
+            star.triggered.connect(lambda: self._start_toy("star"))
+
+        listen = sub.addAction("不用跟着听" if hub.music.enabled else "陪我听音乐")
+        listen.setToolTip("跟听只影响 Mimi 的表现，不会控制你的播放器。")
+        listen.triggered.connect(self._toggle_music)
+        if self.media is not None:
+            # 播放器的实际控制单独一层：跟听是"Mimi 陪你"，这里是"操作播放器"。
+            music_ctl = submenu(sub, "音乐控制")
+            music_ctl.setStyleSheet(self.MENU_QSS)
+            menu_labels.cap_width(music_ctl)
+            self.media.build_menu(music_ctl)
+
+        sub.addSeparator()
+        toggle = sub.addAction("收起小空间" if hub.scene.is_visible else "打开小空间")
+        toggle.triggered.connect(self._toggle_scene)
+        if hub.scene.scene.items:
+            lamp = sub.addAction("开关小灯")
+            lamp.triggered.connect(lambda: self._hub_say(hub.scene.toggle_lamp()))
+            layout = sub.addAction(
+                "改成固定角落" if hub.scene.scene.placement == "follow" else "改成跟着走"
+            )
+            layout.triggered.connect(self._toggle_placement)
+        return sub
+
+    def _build_records_menu(self, parent: QMenu) -> QMenu:
+        """记录与任务：便签、三步任务、下班收尾。"""
+        hub = self.hub
+        sub = submenu(parent, "记录与任务")
+        sub.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(sub)
+        if hub is None:
+            return sub
+
+        stats = getattr(self, "stats", None)
+        if stats is not None:
+            today = menu_labels.add_item(sub, stats.sentence(), enabled=False)
+            today.setToolTip("今天是陪你的时长、专注与完成情况")
+            sub.addSeparator()
+
+        notes = sub.addAction(f"全部便签（{hub.notes.count()}）")
+        notes.triggered.connect(lambda: self.feature_requested.emit("notes_list"))
+
+        task_menu = submenu(sub, f"任务（{len(hub.tasks.open_tasks())}）")
+        task_menu.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(task_menu)
+        new_task = task_menu.addAction("拆成三步…")
+        new_task.triggered.connect(lambda: self.feature_requested.emit("task_new"))
+        all_tasks = task_menu.addAction("全部任务…")
+        all_tasks.triggered.connect(lambda: self.feature_requested.emit("task_list"))
+        active = hub.tasks.active()
+        if active is not None:
+            task_menu.addSeparator()
+            step = active.current_step
+            label = f"完成：{step.text}" if step else "完成当前任务"
+            done_item = task_menu.addAction(menu_labels.short_label(label))
+            done_item.setToolTip(label)
+            done_item.triggered.connect(lambda: self._finish_task_step(active.id))
+            undo_item = task_menu.addAction("撤销上一步")
+            undo_item.triggered.connect(lambda: self._undo_task_step(active.id))
+            pause_item = task_menu.addAction("先停一下")
+            pause_item.triggered.connect(lambda: self._hub_say(hub.tasks.pause(active.id)))
+
+        sub.addSeparator()
+        wrap = sub.addAction("今天到这里…")
+        wrap.triggered.connect(lambda: self.feature_requested.emit("wrapup"))
+        _wid, next_step = hub.wrapups.pending_next_step()
+        if next_step:
+            resume = sub.addAction(f"接着昨天：{menu_labels.short_label(next_step)}")
+            resume.setToolTip(next_step)
+            resume.triggered.connect(self._continue_tomorrow)
+        return sub
+
+    def _build_settings_menu(self, parent: QMenu) -> QMenu:
+        """设置：尺寸位置、健康小卡、调试。低频但必须可达。"""
+        sub = submenu(parent, "设置")
+        sub.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(sub)
+
+        self._build_size_menu(sub)
+
+        if self.hub is not None:
+            health = submenu(sub, "健康小卡")
+            health.setStyleSheet(self.MENU_QSS)
+            menu_labels.cap_width(health)
+            for plan in self.hub.health.summary()["plans"]:
+                mark = "●" if plan["enabled"] else "○"
+                item = health.addAction(f"{mark} {plan['name']} 每 {plan['interval_minutes']} 分钟")
+                item.setToolTip(
+                    f"{'、'.join(plan['windows'])} · 每天最多 {plan['daily_cap']} 次"
+                )
+                item.setCheckable(True)
+                item.setChecked(plan["enabled"])
+                item.triggered.connect(
+                    lambda checked=False, kind=plan["kind"]: self._toggle_health(kind, checked)
+                )
+            health.addSeparator()
+            tune = health.addAction("调整间隔与上限…")
+            tune.triggered.connect(lambda: self.feature_requested.emit("health_settings"))
+
+        sub.addSeparator()
+        debug_action = sub.addAction("显示调试信息")
+        debug_action.setCheckable(True)
+        debug_action.setChecked(self.debug_enabled)
+        debug_action.toggled.connect(self._set_debug_enabled)
+        return sub
+
+    # ---------------------------------------------------------- 功能动作
+
+    def _hub_say(self, result) -> None:
+        ok, message = result if isinstance(result, tuple) else (True, str(result))
+        if message:
+            self.bubble_requested.emit(message, "companion")
+
+    def _finish_task_step(self, task_id: str) -> None:
+        ok, message = self.hub.complete_task_step(task_id)
+        self._hub_say((ok, message))
+
+    def _undo_task_step(self, task_id: str) -> None:
+        self._hub_say(self.hub.undo_task_step(task_id))
+
+    def _toggle_scene(self) -> None:
+        hub = self.hub
+        self._hub_say(hub.scene.hide() if hub.scene.is_visible else hub.scene.show())
+
+    def _toggle_placement(self) -> None:
+        hub = self.hub
+        target = "fixed" if hub.scene.scene.placement == "follow" else "follow"
+        self._hub_say(hub.scene.set_placement(target))
+
+    def _start_toy(self, toy: str) -> None:
+        ok, message = self.hub.start_toy(toy)
+        if ok:
+            # 玩具只在宠物窗口内活动，避免全屏遮罩挡住真实桌面操作。
+            self.hub.toys.bounds = (
+                0.0, 0.0, float(self.width()), float(self.height())
+            )
+            # 开局播一次对应姿势：有素材就是造型动作，没有就静默跳过。
+            self.engine.force_perform("push_ball" if toy == "ball" else "catch_star")
+        self._hub_say((ok, message))
+
+    def _toggle_music(self) -> None:
+        ok, message = self.hub.music.toggle()
+        if ok and self.hub.music.enabled:
+            track = self.media.track if self.media is not None else None
+            if track is not None:
+                self.hub.music.update(
+                    title=track.display(), playing=track.status == "playing"
+                )
+        self._hub_say((ok, message))
+
+    def _continue_tomorrow(self) -> None:
+        ok, message, _task_id = self.hub.continue_tomorrow()
+        if message:
+            self.bubble_requested.emit(message, "companion")
+        if ok:
+            self.engine.force_perform("think_pencil")
+
+    def _toggle_health(self, kind: str, enabled: bool) -> None:
+        self._hub_say(self.hub.health.configure(kind, enabled=enabled))
+
+    def _build_outfit_menu(self, menu: QMenu) -> None:
+        """造型入口：整套预设，不做单件混搭。"""
+        service = self.outfits
+        catalog = service.catalog
+        if not len(catalog):
+            return
+        outfit_menu = submenu(menu, "造型")
+        outfit_menu.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(outfit_menu)
+
+        current = service.selection.id
+        group = QActionGroup(outfit_menu)
+        group.setExclusive(True)
+
+        default_item = outfit_menu.addAction("默认造型")
+        default_item.setCheckable(True)
+        default_item.setChecked(not current)
+        group.addAction(default_item)
+        default_item.triggered.connect(lambda: self._apply_outfit(""))
+
+        for spec in catalog.presets():
+            suffix = "" if spec.is_daily else "（展示）"
+            item = outfit_menu.addAction(f"{spec.name_zh}{suffix}")
+            # 选中前就能看到这套衣服到底能做什么，不必试了才发现缺动作。
+            acts = len(spec.supported_actions)
+            missing = spec.missing_actions()
+            tip = spec.description or spec.name_zh
+            tip += f"\n可做 {acts} 个动作"
+            if missing:
+                tip += f"；还缺 {len(missing)} 个日常动作，暂不走路"
+            item.setToolTip(tip)
+            item.setCheckable(True)
+            item.setChecked(current == spec.id)
+            group.addAction(item)
+            item.triggered.connect(
+                lambda _checked=False, oid=spec.id: self._choose_outfit(oid)
+            )
+
+        if service.preview_id:
+            outfit_menu.addSeparator()
+            cancel = outfit_menu.addAction("取消试穿")
+            cancel.triggered.connect(self._cancel_preview)
+
+        if service.selection.store_error:
+            outfit_menu.addSeparator()
+            note = outfit_menu.addAction(menu_labels.short_label(service.selection.store_error))
+            note.setEnabled(False)
+            note.setToolTip(service.selection.store_error)
+
+    def set_toy_state(self, state) -> None:
+        """玩具会话的画面状态；只画在宠物窗口内，不建全屏遮罩。"""
+        self._toy_state = state
+        self.update()
+
+    def _choose_outfit(self, outfit_id: str) -> None:
+        """第一次点试穿，再点同一套才保存——避免误触改掉搭配。"""
+        service = self.outfits
+        if service is None:
+            return
+        if service.preview_id == outfit_id:
+            self._apply_outfit(outfit_id)
+        else:
+            self._preview_outfit(outfit_id)
+
+    def _preview_outfit(self, outfit_id: str) -> None:
+        """先试穿：不改记忆，用户确认后才落盘。"""
+        service = self.outfits
+        if service is None:
+            return
+        ok, message = service.preview(outfit_id)
+        if ok:
+            self.engine.set_outfit(service.effective())
+        if message:
+            self.bubble_requested.emit(message + "\n再点一次就保存。", "companion")
+
+    def _cancel_preview(self) -> None:
+        service = self.outfits
+        if service is None:
+            return
+        ok, message = service.cancel_preview()
+        if ok:
+            self.engine.set_outfit(service.effective())
+        if message:
+            self.bubble_requested.emit(message, "companion")
+
+    def _apply_outfit(self, outfit_id: str) -> None:
+        """确认保存：把试穿结果写进记忆。"""
+        service = self.outfits
+        if service is None:
+            return
+        ok, message = service.select(outfit_id)
+        if ok:
+            self.engine.set_outfit(service.current())
+        if message:
+            self.bubble_requested.emit(message, "companion")
+
+    def _build_size_menu(self, parent: QMenu) -> QMenu:
+        """尺寸、缩放与摆放。"""
+        from PySide6.QtWidgets import QHBoxLayout, QLabel
+
+        sub = submenu(parent, "尺寸与位置")
+        sub.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(sub)
+        size_group = QActionGroup(sub)
         size_group.setExclusive(True)
         for label, (width, height) in (
             ("小号（192×288）", (192, 288)),
             ("中号（256×384）", (256, 384)),
             ("大号（320×480）", (320, 480)),
         ):
-            size_item = settings_menu.addAction(label)
-            size_item.setCheckable(True)
-            size_item.setChecked(self.engine.display_w == width)
-            size_group.addAction(size_item)
-            size_item.triggered.connect(
+            item = sub.addAction(label)
+            item.setCheckable(True)
+            item.setChecked(self.engine.display_w == width)
+            size_group.addAction(item)
+            item.triggered.connect(
                 lambda checked=False, w=width, h=height: self._apply_size(w, h)
             )
-        settings_menu.addSeparator()
-        slide_action = QWidgetAction(settings_menu)
-        slide_row = QWidget()
-        from PySide6.QtWidgets import QHBoxLayout, QLabel
+        sub.addSeparator()
 
-        slide_row.setStyleSheet(
+        slide_action = QWidgetAction(sub)
+        row = QWidget()
+        row.setStyleSheet(
             "QLabel { color: #cbd7f5; font-size: 11px; }"
             "QSlider::groove:horizontal { height: 4px; background: #303954; "
             "border-radius: 2px; }"
@@ -408,97 +832,126 @@ class MimiWindow(QWidget):
             "QSlider::handle:horizontal { background: #f2f5ff; width: 12px; "
             "margin: -4px 0; border-radius: 6px; }"
         )
-        slide_layout = QHBoxLayout(slide_row)
-        slide_layout.setContentsMargins(6, 2, 6, 2)
-        slide_layout.setSpacing(4)
-        slide_layout.addWidget(QLabel("缩放"))
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(6, 2, 6, 2)
+        layout.setSpacing(4)
+        layout.addWidget(QLabel("缩放"))
         slider = QSlider(Qt.Orientation.Horizontal)
         slider.setRange(self.ZOOM_MIN_H, self.ZOOM_MAX_H)
         slider.setValue(self.engine.display_h)
         slider.setFixedWidth(150)
-        slide_layout.addWidget(slider)
+        layout.addWidget(slider)
         zoom_value = QLabel(f"高 {self.engine.display_h}px")
-        slider.valueChanged.connect(
-            lambda h: self._apply_size(int(round(h * 2 / 3)), h)
-        )
+        slider.valueChanged.connect(lambda h: self._apply_size(int(round(h * 2 / 3)), h))
         slider.valueChanged.connect(lambda h: zoom_value.setText(f"高 {h}px"))
-        slide_layout.addWidget(zoom_value)
-        slide_action.setDefaultWidget(slide_row)
-        settings_menu.addAction(slide_action)
-        settings_menu.addSeparator()
-        placement_group = QActionGroup(settings_menu)
-        placement_group.setExclusive(True)
-        dock_action = settings_menu.addAction("停靠屏幕底部")
-        dock_action.setCheckable(True)
-        dock_action.setChecked(not self.engine.free_placement)
-        placement_group.addAction(dock_action)
-        dock_action.toggled.connect(lambda checked: self.engine.set_free_placement(not checked))
-        free_action = settings_menu.addAction("自由放置")
-        free_action.setCheckable(True)
-        free_action.setChecked(self.engine.free_placement)
-        placement_group.addAction(free_action)
-        free_action.toggled.connect(self.engine.set_free_placement)
-        reset_action = settings_menu.addAction("回到屏幕底部")
-        reset_action.triggered.connect(self._reset_position)
-        debug_action = settings_menu.addAction("显示调试信息")
-        debug_action.setCheckable(True)
-        debug_action.setChecked(self.debug_enabled)
-        debug_action.toggled.connect(self._set_debug_enabled)
+        layout.addWidget(zoom_value)
+        slide_action.setDefaultWidget(row)
+        sub.addAction(slide_action)
 
-        # DSH 集成
-        if self.dsh is not None:
-            dsh_menu = menu.addMenu("Harness")
-            dsh_menu.setStyleSheet(self.MENU_QSS)
-            menu_labels.cap_width(dsh_menu)
-            # 模式：工作模式跟随 DSH 活动；桌宠模式在头部悬停时聊天。
-            mode_group = QActionGroup(dsh_menu)
-            mode_group.setExclusive(True)
-            for label, value in (
-                ("工作模式（跟随 DSH）", "link"),
-                ("桌宠模式（和 Mimi 聊天）", "agent"),
-            ):
-                mode_item = dsh_menu.addAction(label)
-                mode_item.setCheckable(True)
-                mode_item.setChecked(self.dsh.mode == value)
-                mode_group.addAction(mode_item)
-                mode_item.triggered.connect(
-                    lambda checked=False, m=value, item=mode_item: self._dsh_set_mode(item, m)
+        sub.addSeparator()
+        placement = QActionGroup(sub)
+        placement.setExclusive(True)
+        dock = sub.addAction("停靠屏幕底部")
+        dock.setCheckable(True)
+        dock.setChecked(not self.engine.free_placement)
+        placement.addAction(dock)
+        dock.toggled.connect(lambda checked: self.engine.set_free_placement(not checked))
+        free = sub.addAction("自由放置")
+        free.setCheckable(True)
+        free.setChecked(self.engine.free_placement)
+        placement.addAction(free)
+        free.toggled.connect(self.engine.set_free_placement)
+        reset = sub.addAction("回到屏幕底部")
+        reset.triggered.connect(self._reset_position)
+        return sub
+
+    def _build_harness_menu(self, parent: QMenu) -> QMenu:
+        """DSH 联动：模式、面板、项目、模型、更新。"""
+        sub = submenu(parent, "Harness")
+        sub.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(sub)
+        if self.dsh is None:
+            menu_labels.add_item(sub, "未连接 DSH", enabled=False)
+            return sub
+
+        mode_group = QActionGroup(sub)
+        mode_group.setExclusive(True)
+        for label, value in (
+            ("工作模式（跟随 DSH）", "link"),
+            ("桌宠模式（和 Mimi 聊天）", "agent"),
+        ):
+            item = sub.addAction(label)
+            item.setCheckable(True)
+            item.setChecked(self.dsh.mode == value)
+            mode_group.addAction(item)
+            item.triggered.connect(
+                lambda checked=False, m=value, i=item: self._dsh_set_mode(i, m)
+            )
+        sub.addSeparator()
+        # 消息栏已移除：不再提供"打开消息面板"（DSH 信息只走头顶气泡）。
+        self._build_project_menu(sub)
+        self._build_pet_model_menu(sub)
+
+        update_info = self.dsh.plugin_update_available()
+        if update_info:
+            installed, latest = update_info
+            menu_labels.add_item(
+                sub, f"插件更新：v{latest} 已发布（当前 v{installed}）", enabled=False
+            )
+        check = sub.addAction("检查更新")
+        check.triggered.connect(lambda: self.dsh.check_plugin_update(manual=True))
+
+        cot_menu = submenu(sub, "摘要模型")
+        cot_menu.setStyleSheet(self.MENU_QSS)
+        menu_labels.cap_width(cot_menu)
+        self._build_cot_menu(cot_menu)
+
+        if self.dsh.pending_questions:
+            q_menu = submenu(sub, f"回答 DSH 问题（{len(self.dsh.pending_questions)}）")
+            q_menu.setStyleSheet(self.MENU_QSS)
+            menu_labels.cap_width(q_menu)
+            for question in list(self.dsh.pending_questions):
+                q_item = menu_labels.add_item(
+                    q_menu, question.question, tooltip=question.detail or question.question
                 )
-            dsh_menu.addSeparator()
-            show_panel_action = dsh_menu.addAction("打开消息面板")
-            show_panel_action.triggered.connect(self._dsh_show_panel)
-            self._build_project_menu(dsh_menu)
-            self._build_pet_model_menu(dsh_menu)
-            update_info = self.dsh.plugin_update_available()
-            if update_info:
-                installed, latest = update_info
-                menu_labels.add_item(
-                    dsh_menu,
-                    f"插件更新：v{latest} 已发布（当前 v{installed}）",
-                    enabled=False,
+                q_item.triggered.connect(
+                    lambda checked=False, q=question: self._dsh_answer(q)
                 )
-            check_update = dsh_menu.addAction("检查更新")
-            check_update.triggered.connect(lambda: self.dsh.check_plugin_update(manual=True))
-            cot_menu = dsh_menu.addMenu("摘要模型")
-            cot_menu.setStyleSheet(self.MENU_QSS)
-            menu_labels.cap_width(cot_menu)
-            self._build_cot_menu(cot_menu)
-            if self.dsh.pending_questions:
-                questions_menu = dsh_menu.addMenu(f"回答 DSH 问题（{len(self.dsh.pending_questions)}）")
-                questions_menu.setStyleSheet(self.MENU_QSS)
-                menu_labels.cap_width(questions_menu)
-                for question in list(self.dsh.pending_questions):
-                    q_item = menu_labels.add_item(
-                        questions_menu, question.question,
-                        tooltip=question.detail or question.question,
-                    )
-                    q_item.triggered.connect(
-                        lambda checked=False, q=question: self._dsh_answer(q)
-                    )
-            if self.dsh.connection_error:
-                menu_labels.add_item(
-                    dsh_menu, f"未连接：{self.dsh.connection_error}", enabled=False
-                )
+        if self.dsh.connection_error:
+            menu_labels.add_item(sub, f"未连接：{self.dsh.connection_error}", enabled=False)
+        return sub
+
+    def _build_context_menu(self) -> QMenu:
+        """右键菜单：8 个顶层入口，按"做事 / 陪她 / 管理"分组。
+
+        拆成独立方法是为了能在 offscreen 测试里直接构造并检查，不必真的弹出。
+        """
+        menu = GlassMenu(self)
+        menu.setStyleSheet(self.MENU_QSS)
+        # 桌宠、输入框、气泡都是置顶窗口；菜单不带同样的标志会在鼠标移过去
+        # 的瞬间被它们盖住并自动关闭。
+        menu.setWindowFlags(menu.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+        menu_labels.cap_width(menu)
+
+        self._menu_header(menu, "Mimi", *self._menu_status())
+        menu.addSeparator()
+
+        note = menu.addAction("记一下…")
+        note.triggered.connect(lambda: self.feature_requested.emit("note"))
+
+        focus = menu.addAction("专注与提醒…")
+        focus.triggered.connect(lambda: self.companion.request_panel() if self.companion else None)
+
+        menu.addSeparator()
+        self._build_companion_menu(menu)
+        if self.outfits is not None:
+            self._build_outfit_menu(menu)
+
+        menu.addSeparator()
+        if self.hub is not None:
+            self._build_records_menu(menu)
+        self._build_settings_menu(menu)
+        self._build_harness_menu(menu)
 
         menu.addSeparator()
         quit_action = menu.addAction("退出 Mimi")
@@ -518,7 +971,7 @@ class MimiWindow(QWidget):
         """DSH 联动模式：选择跟随哪个项目（会话）。"""
         if getattr(self, "_project_choices", None) is None or self.dsh.mode != "link":
             return
-        project_menu = dsh_menu.addMenu("项目")
+        project_menu = submenu(dsh_menu, "项目")
         project_menu.setStyleSheet(self.MENU_QSS)
         menu_labels.cap_width(project_menu)
         current = self._project_current() if self._project_current else None
@@ -552,7 +1005,7 @@ class MimiWindow(QWidget):
         if self.dsh is None or self.dsh.mode != "agent":
             return
         current_sid = self.dsh._agent_session_id
-        model_menu = dsh_menu.addMenu("桌宠模型")
+        model_menu = submenu(dsh_menu, "桌宠模型")
         model_menu.setStyleSheet(self.MENU_QSS)
         menu_labels.cap_width(model_menu)
         catalog = self.dsh.session_model_choices(force_refresh=True)
@@ -576,7 +1029,7 @@ class MimiWindow(QWidget):
             if entry.reasoning_efforts:
                 # A submenu title is capped too: model ids plus provider
                 # labels are the widest strings the menu ever sees.
-                model_submenu = model_menu.addMenu(menu_labels.short_label(label))
+                model_submenu = submenu(model_menu, menu_labels.short_label(label))
                 model_submenu.setStyleSheet(self.MENU_QSS)
                 menu_labels.cap_width(model_submenu)
                 model_submenu.setToolTip(label)
@@ -627,6 +1080,14 @@ class MimiWindow(QWidget):
             return
         if not self.dsh.set_mode(mode):
             action.setChecked(False)
+            self.bubble_requested.emit("切换失败：DSH 没连上，或桌宠会话创建不了。", "companion")
+            return
+        # 切换成功要明确告诉用户"现在能干什么"，否则桌宠模式看起来只是换了个标签。
+        if mode == "agent":
+            self.bubble_requested.emit("桌宠模式：把鼠标放到头顶就能跟我说话。", "companion")
+            self.engine.force_perform("wave")
+        else:
+            self.bubble_requested.emit("工作模式：我会跟着 DSH 的任务走。", "companion")
 
     def _build_cot_menu(self, cot_menu) -> None:
         """摘要模型：自动跟随 DSH / 指定模型 / 关闭（对回复做总结）。"""
@@ -718,6 +1179,20 @@ class MimiWindow(QWidget):
 
     def closeEvent(self, event) -> None:  # noqa: N802 (Qt override)
         from .state_machine import Event
+
+        # 第一次关闭先道个别：推迟 0.8 秒真正退出，让气泡有时间出现。
+        if not getattr(self, "_farewell_done", False):
+            self._farewell_done = True
+            try:
+                self.bubble_requested.emit("那我先休息啦，明天见。", "companion")
+            except Exception:  # noqa: BLE001 - 告别失败不该阻塞退出
+                pass
+            self.engine.force_perform("wave_slow")
+            event.ignore()
+            from PySide6.QtCore import QTimer
+
+            QTimer.singleShot(800, self.close)
+            return
 
         self.engine.states.dispatch(Event.CLOSE)
         self.closed.emit()

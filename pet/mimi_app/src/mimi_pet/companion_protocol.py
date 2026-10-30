@@ -31,6 +31,55 @@ class CompanionActions:
             "notices": [asdict(item) for item in reversed(service.notices)],
             "storage_error": service.store.error if service.store else "",
             "revision": service.revision,
+            # 造型能力摘要：DSH 面板据此展示每套衣服能做什么，
+            # 不把整份帧清单塞进每次快照。
+            "outfits": self._outfit_summary(),
+            # F01–F08 的摘要；面板只读，操作走菜单与卡片。
+            "expansion": self._expansion_summary(),
+        }
+
+    def _expansion_summary(self) -> dict:
+        hub = getattr(self, "hub", None)
+        if hub is None:
+            return {}
+        try:
+            snap = hub.snapshot()
+        except Exception:  # noqa: BLE001 - 快照失败不能拖垮面板
+            return {}
+        # 面板不需要全部细节，只给计数与当前一步。
+        return {
+            "notes": snap.get("notes", {}).get("count", 0),
+            "task": (snap.get("tasks") or {}).get("active"),
+            "open_tasks": (snap.get("tasks") or {}).get("open_count", 0),
+            "scene_visible": (snap.get("scene") or {}).get("visible", False),
+            "next_step": (snap.get("wrapup") or {}).get("next_step", ""),
+            "health": [
+                {"name": p["name"], "enabled": p["enabled"], "cap": p["daily_cap"]}
+                for p in (snap.get("health") or {}).get("plans", [])
+            ],
+            "music": (snap.get("music") or {}).get("enabled", False),
+            "toy": (snap.get("toys") or {}).get("active", False),
+        }
+
+    def _outfit_summary(self) -> dict:
+        catalog = getattr(self, "outfit_catalog", None)
+        if catalog is None:
+            return {"available": 0, "current": "", "items": []}
+        current = getattr(self, "current_outfit_id", "")
+        return {
+            "available": len(catalog),
+            "current": current,
+            "items": [
+                {
+                    "id": spec.id,
+                    "name_zh": spec.name_zh,
+                    "mode": spec.mode,
+                    "daily": spec.is_daily,
+                    "actions": list(spec.supported_actions),
+                    "missing": list(spec.missing_actions()),
+                }
+                for spec in catalog.presets()
+            ],
         }
 
     @staticmethod
@@ -88,6 +137,10 @@ class CompanionActions:
             "reminder.update": {"id", "text", "due_at", "status"},
             "reminder.snooze": {"id", "minutes"},
             "notices.clear": set(), "command": {"text"},
+            # F01/F02 的面板侧操作：只做最常用的三个，避免面板变成表单堆。
+            "note.add": {"text"},
+            "task.step.complete": {"id", "step_id"},
+            "task.undo": {"id"},
         }
         if not isinstance(op, str) or op not in allowed or set(action) - {"op"} - allowed[op]:
             raise ValueError("不支持的陪伴操作。")
@@ -127,6 +180,31 @@ class CompanionActions:
             message = service.update_reminder(identifier, due_at=service.wall_clock() + minutes * 60)
         elif op == "notices.clear":
             message = service.clear_history()
+        elif op == "note.add":
+            hub = getattr(self, "hub", None)
+            if hub is None:
+                raise ValueError("便签功能未启用。")
+            text = self._text(action.get("text"), limit=2000)
+            ok, message, _note_id = hub.add_note(text)
+            if not ok:
+                raise ValueError(message)
+        elif op == "task.step.complete":
+            hub = getattr(self, "hub", None)
+            if hub is None:
+                raise ValueError("任务功能未启用。")
+            ok, message = hub.complete_task_step(
+                self._text(action.get("id"), limit=64),
+                self._text(action.get("step_id") or "", limit=64) if action.get("step_id") else "",
+            )
+            if not ok:
+                raise ValueError(message)
+        elif op == "task.undo":
+            hub = getattr(self, "hub", None)
+            if hub is None:
+                raise ValueError("任务功能未启用。")
+            ok, message = hub.undo_task_step(self._text(action.get("id"), limit=64))
+            if not ok:
+                raise ValueError(message)
         else:
             text = self._text(action.get("text"), limit=300)
             command = parse_command(text, now=service.wall_clock())

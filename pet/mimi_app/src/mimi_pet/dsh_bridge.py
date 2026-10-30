@@ -34,6 +34,15 @@ from typing import Any, Callable
 from .debug_log import dbg  # noqa: F401 (re-exported for existing importers)
 
 DEFAULT_HOST = os.environ.get("MIMI_DSH_HOST", "127.0.0.1:3080")
+
+
+def has_event_stream() -> bool:
+    """实时事件流是否可用（需要 websocket-client）。"""
+    try:
+        import websocket  # noqa: F401
+        return True
+    except ImportError:
+        return False
 REMOTE_PATH = "/api/remote.mux"
 # Public compatibility alias used by older diagnostics/importers.
 EVENTS_PATH = REMOTE_PATH

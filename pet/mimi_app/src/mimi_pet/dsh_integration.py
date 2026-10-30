@@ -102,8 +102,17 @@ _tool_row_text = tool_row_text  # noqa: N816 (legacy alias)
 # Pet-agent session identity: an archived ("invisible in web UI") DSH session
 # the pet owns. Versioned so persona upgrades re-seed an existing session.
 AGENT_SESSION_TITLE = "Mimi 管家"
+#: 重连时会被 DSH 重放的历史事件类型；这些在保护窗口内直接丢弃。
+_REPLAY_PRONE_TYPES = (
+    "assistant/message",
+    "user/message",
+    "assistant/chunk",
+    "assistant/thinking",
+    "turn/start",
+)
+
 AGENT_PERMISSION_PRESET = "danger-full-access"
-AGENT_PERSONA_VERSION = 8
+AGENT_PERSONA_VERSION = 9
 _MEDIA_CLI = Path(__file__).resolve().parent / "media_cmd.py"
 AGENT_PERSONA_PROMPT = f"""你是小咪（Mimi），用户的桌面宠物——一位温柔的鲸鱼娘陪伴者，同时也是这台 Windows 电脑的小管家。用户会直接用简短的中文跟你说话。
 
@@ -152,6 +161,24 @@ AGENT_PERSONA_PROMPT = f"""你是小咪（Mimi），用户的桌面宠物——�
 
 请只回复「好的喵～，小咪管家上线！」确认。"""
 
+_MACOS_ADDENDUM = """
+
+【当前系统：macOS】
+以上示例里的 PowerShell / Start-Process / C:\Windows 是 Windows 写法。你现在运行在 macOS 上：
+- 打开程序或文件用 `open -a "App"` 或 `open 路径`；
+- 脚本用 bash / zsh，或 `osascript -e '...'`（AppleScript）；
+- 路径用正斜杠，家目录是 ~，应用在 /Applications；
+- 不要调用 PowerShell、Start-Process 或任何 C:\ 开头的路径。
+"""
+
+
+def agent_persona_prompt() -> str:
+    import sys
+
+    if sys.platform == "darwin":
+        return AGENT_PERSONA_PROMPT + _MACOS_ADDENDUM
+    return AGENT_PERSONA_PROMPT
+
 DSH_OWNED_ACTIONS = frozenset(
     {
         "harness_task_thinking_v1_12",
@@ -167,8 +194,14 @@ class DshIntegration:
     """Owns the bridge + event thread and maps DSH state onto the pet + panel."""
 
     POLL_INTERVAL_S = 2.0
+    #: 事件流不可用时只能靠 HTTP 轮询，缩短间隔让工作模式的状态更及时。
+    POLL_INTERVAL_FALLBACK_S = 1.0
     REPLAY_GAP_S = 10.0  # min seconds between DSH work-animation replays
-    MAX_EVENTS_PER_DRAIN = 256
+    MAX_EVENTS_PER_DRAIN = 96
+    #: 队列里积压超过这个数量，就当成重放风暴处理
+    REPLAY_BURST_THRESHOLD = 48
+    #: 风暴中保留最后几条，用于把界面状态恢复到最新
+    REPLAY_KEEP = 6
 
     def __init__(self, engine: PetEngine, host: str = DEFAULT_HOST) -> None:
         self.engine = engine
@@ -199,6 +232,12 @@ class DshIntegration:
         self._last_bubble_at = 0.0
         self._last_tool_bubbled = ""
         self._last_tool_bubble_at = -1e9
+        self._activity_emitted_at = 0.0
+        self._last_text_row_at = 0.0
+        # 重连后 DSH 会把历史消息重放一遍；在这个窗口内丢弃它们，
+        # 否则一秒几百条事件会把主线程压死（画面直接冻住）。
+        self._replay_guard_until = 0.0
+        self._seen_seqs: dict[str, int] = {}
         self._recent_done_at = 0.0
         # Incremented whenever the followed session/mode changes. Background
         # results carry this generation so a late summary cannot leak into a
@@ -210,9 +249,10 @@ class DshIntegration:
         # bridges/readers remain usable.
         self._followed_session: str | None = None
         # DSH host (invisible in the web UI) driven by DSH's model config.
-        # mode: "link" mirrors the user's work sessions (default), "agent"
-        # routes the panel input and pet reactions to the shadow session.
-        self.mode = "link"
+        # mode: "agent" = 桌宠模式（默认，只做桌宠、不跟随工作会话）；
+        # "link" = 工作模式，镜像用户的工作会话。
+        # 桌宠会话按需懒创建（resolve_prompt_target -> ensure_agent_session）。
+        self.mode = "agent"
         self._agent_session_id: str | None = None
         self._agent_session_file = (
             Path(__file__).resolve().parents[2] / "config" / "agent_session.json"
@@ -240,6 +280,8 @@ class DshIntegration:
         self.local_command_handler = None  # (text) -> bool | None; agent mode only
         self.bubble_allowed = None  # (kind) -> bool, supplied by local quiet mode
         self.on_activity = None  # callable(active: bool) -> panel show/hide
+        # 回复到达时回调（让输入框退出“思考中”状态）
+        self.on_reply = None  # callable(text) -> None
         self.last_activity_at = 0.0
 
         # Streaming state for assistant/chunk deltas.
@@ -294,7 +336,16 @@ class DshIntegration:
             status_zh="未连接",
             summary="未连接…",
             full_activity="",
+            mode=self.mode,
         )
+
+    def poll_interval_s(self) -> float:
+        """当前应使用的轮询间隔。
+
+        有实时事件时 2 秒足够；没有事件流时缩短到 1 秒，否则工作模式里
+        "现在在做什么"会明显滞后。
+        """
+        return self.POLL_INTERVAL_FALLBACK_S if self.connection_error else self.POLL_INTERVAL_S
 
     @property
     def connection_error(self) -> str:
@@ -501,18 +552,25 @@ class DshIntegration:
             return bool(head_hovered)
         if getattr(self.engine, "quiet_mode", False):
             return bool(head_hovered)
-        return self._build_activity().status in {
-            "thinking",
-            "executing",
-            "tool",
-            "waiting",
-            "done",
-        }
+        # 工作模式：不再随着 DSH 活动自动弹出输入框。
+        # 进度和状态改由桌面状态条承载，输入框只在真的需要用户回答时出现。
+        return bool(self.pending_questions)
 
-    def _emit_activity(self) -> None:
-        """Push the current ActivityState to the panel sink (content only)."""
-        self.activity = self._build_activity()
-        self._sink("set_activity", self.activity)
+    def _emit_activity(self, *, force: bool = False) -> None:
+        """把当前活动状态推给面板。
+
+        事件流每秒可能来几十条，状态文本变化却没这么频繁；无条件重推会让
+        面板反复重排样式（unpolish/polish 很贵）。这里做两点收敛：
+        状态档位变化立刻推，其余最多 10Hz。
+        """
+        now = time.perf_counter()
+        state = self._build_activity()
+        changed_status = state.status != self.activity.status
+        if not force and not changed_status and now - self._activity_emitted_at < 0.1:
+            return
+        self.activity = state
+        self._activity_emitted_at = now
+        self._sink("set_activity", state)
 
     @property
     def local_input_available(self) -> bool:
@@ -793,6 +851,16 @@ class DshIntegration:
     def drain_events(self) -> None:
         # Bound each UI-thread pass. A very chatty token stream should take a
         # few timer ticks to catch up, not monopolize Qt and freeze the pet.
+        pending = self.event_queue.qsize()
+        if pending > self.REPLAY_BURST_THRESHOLD:
+            # 重连/重放风暴：一秒上百条历史事件。逐条处理会把主线程压死，
+            # 这里直接丢掉大部分，只留最后几条把状态恢复到位。
+            self._replay_guard_until = time.perf_counter() + 1.5
+            for _ in range(pending - self.REPLAY_KEEP):
+                try:
+                    self.event_queue.get_nowait()
+                except queue.Empty:
+                    break
         for _ in range(self.MAX_EVENTS_PER_DRAIN):
             try:
                 event = self.event_queue.get_nowait()
@@ -898,6 +966,20 @@ class DshIntegration:
     def _handle_event(self, event: DshEvent) -> None:
         method = event.method
         payload = event.payload
+        if method == "session/event":
+            # 真正的类型在 payload["event"]["type"]；method 永远是 session/event。
+            inner = payload.get("event")
+            inner_type = inner.get("type", "") if isinstance(inner, dict) else ""
+            if inner_type in _REPLAY_PRONE_TYPES:
+                if time.perf_counter() < self._replay_guard_until:
+                    return  # 重连后的历史重放，直接丢弃
+                session_key = str(payload.get("sessionId", "") or "")
+                seq = getattr(event, "seq", None)
+                if seq is not None:
+                    previous = self._seen_seqs.get(session_key)
+                    if previous is not None and seq <= previous:
+                        return  # 重复事件
+                    self._seen_seqs[session_key] = seq
         if method == "__link":
             # Processed on the main thread (drained by QTimer) — safe to touch
             # Qt here. First successful link reveals the head-top capsule.
@@ -908,6 +990,10 @@ class DshIntegration:
                 # the cause, not just "disconnected".
                 self.link_error = reason
             dbg(f"link connected={self.connected}")
+            if self.connected:
+                # 新连接可能重放历史；先静默 2 秒，并重置序号基线。
+                self._replay_guard_until = time.perf_counter() + 2.0
+                self._seen_seqs.clear()
             if not self.connected:
                 # Polling will restore work state after reconnect. Until then,
                 # stop stale body/talking state and invalidate worker results.
@@ -1174,7 +1260,12 @@ class DshIntegration:
             self._text += chunk.get("text", "")
             tag = self._text_tag or f"text_{turn}_{step}"
             self._text_tag = tag
-            self._sink("set_row", tag, "assistant", self._text)
+            # 每个 delta 都重排一次面板文字太贵（流式输出一秒几十个 delta），
+            # 限制到 10Hz；block-end 时再补一次最终文本。
+            now_ts = time.perf_counter()
+            if now_ts - self._last_text_row_at >= 0.1:
+                self._last_text_row_at = now_ts
+                self._sink("set_row", tag, "assistant", self._text)
         elif ctype == "reasoning-delta":
             self.engine.set_talking(False)
             self._tool_active = False  # a tool finished; we are reasoning again
@@ -1203,6 +1294,7 @@ class DshIntegration:
             block = chunk.get("block") or {}
             if block.get("type") == "text":
                 self.engine.set_talking(False)
+                self._deliver_reply(self._text)
             if block.get("type") == "reasoning":
                 text = block.get("text") or ""
                 if text:
@@ -1311,6 +1403,22 @@ class DshIntegration:
         if self.cot is None:
             return [("关闭", "auto", "")]
         return self.cot.model_choices()
+
+    def _deliver_reply(self, text: str) -> None:
+        """把这一轮的助手回复真正交给用户。
+
+        之前只气泡"总结"，正文只存在于 DSH 网页面板里；桌面上聊天等于
+        发出去就没影了。这里把回复本体也气泡出来（agent 模式）。
+        """
+        text = (text or "").strip()
+        if not text:
+            return
+        self._last_assistant_text = text
+        if self.mode == "agent":
+            short = text if len(text) <= 180 else text[:177] + "…"
+            self._bubble(short, duration=8.0, kind="reply", force=True)
+        if callable(self.on_reply):
+            self.on_reply(text)
 
     def _finish_text(self) -> None:
         self._text_tag = None
@@ -1519,7 +1627,7 @@ class DshIntegration:
             if stored and stored in known:
                 self._agent_session_id = stored
                 if self._stored_persona_version < AGENT_PERSONA_VERSION:
-                    self.bridge.prompt(stored, AGENT_PERSONA_PROMPT)
+                    self.bridge.prompt(stored, agent_persona_prompt())
                     self._seed_persona_complete()
                     self._save_agent_session(stored)
                 return True
@@ -1547,7 +1655,7 @@ class DshIntegration:
                 self.bridge.rename_session(session_id, AGENT_SESSION_TITLE)
             except DshError:
                 pass  # cosmetic; the session works without a title
-            self.bridge.prompt(session_id, AGENT_PERSONA_PROMPT)
+            self.bridge.prompt(session_id, agent_persona_prompt())
             self._agent_session_id = session_id
             self._seed_persona_complete()
             self._save_agent_session(session_id)

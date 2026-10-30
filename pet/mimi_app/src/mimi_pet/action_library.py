@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
+
+from .debug_log import dbg
 
 
 @dataclass(frozen=True)
@@ -23,6 +26,17 @@ class ActionSpec:
     @property
     def total_duration_ms(self) -> int:
         return sum(self.duration_ms)
+
+
+def _abs_path(base: Path, value: str) -> Path:
+    """把 manifest 里的相对路径转成绝对路径，不做文件系统查询。
+
+    ``Path.resolve()`` 会对每个路径做一次系统调用；5,000+ 帧在机械/网络盘上
+    要 3–4 秒，直接拖慢 DSH 启动。manifest 里的路径只含 ``..`` 这类纯词法
+    成分，``os.path.normpath`` 就能正确处理，不需要访问磁盘。
+    """
+    joined = os.path.normpath(os.path.join(str(base), value))
+    return Path(joined)
 
 
 def _parse_registration_scale(raw: object) -> tuple[float, float]:
@@ -47,7 +61,7 @@ class ActionLibrary:
         for raw in data["usable_actions"]:
             if raw.get("status") != "usable" or raw.get("enabled") is not True:
                 continue
-            frames = tuple((self.root / value).resolve() for value in raw["frames"])
+            frames = tuple(_abs_path(self.root, value) for value in raw["frames"])
             durations = tuple(int(value) for value in raw["duration_ms"])
             if len(frames) != len(durations) or not frames:
                 raise ValueError(f"{raw['id']}: frame and duration counts differ")
@@ -77,7 +91,7 @@ class ActionLibrary:
         if drag_poses:
             canvas = tuple(int(value) for value in drag_poses.get("canvas", [512, 768]))
             for set_id, raw in drag_poses.get("sets", {}).items():
-                frames = tuple((self.root / value).resolve() for value in raw["frames"])
+                frames = tuple(_abs_path(self.root, value) for value in raw["frames"])
                 durations = tuple(int(value) for value in raw["duration_ms"])
                 if len(frames) != len(durations) or not frames:
                     raise ValueError(f"drag_poses.{set_id}: frame and duration counts differ")
@@ -105,7 +119,7 @@ class ActionLibrary:
                     )[1],
                 )
             for transition_id, raw in drag_poses.get("release_transitions", {}).items():
-                frames = tuple((self.root / value).resolve() for value in raw["frames"])
+                frames = tuple(_abs_path(self.root, value) for value in raw["frames"])
                 durations = tuple(int(value) for value in raw["duration_ms"])
                 if len(frames) != len(durations) or not frames:
                     raise ValueError(f"release_transitions.{transition_id}: counts differ")
@@ -132,6 +146,72 @@ class ActionLibrary:
                         raw.get("registration_scale", 1.0)
                     )[1],
                 )
+
+        # 扩展动作目录（视频模型生成）作为同构来源合并进同一个白名单。
+        # 文件缺失时整批跳过：扩展是可选内容，不能拖垮正式素材。
+        self.loaded_expansion: tuple[str, ...] = ()
+        expansion_path = data.get("expansion_manifest")
+        if expansion_path:
+            self._load_expansion((self.root / expansion_path).resolve())
+
+    def _load_expansion(self, manifest_path: Path) -> None:
+        """Merge an optional expansion manifest into the same allowlist."""
+        if not manifest_path.is_file():
+            return
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            dbg(f"expansion manifest unreadable: {exc}")
+            return
+        if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+            dbg("expansion manifest version mismatch; ignored")
+            return
+        added: list[str] = []
+        for raw in payload.get("actions", []):
+            try:
+                if raw.get("status") != "usable" or raw.get("enabled") is not True:
+                    continue
+                action_id = str(raw["id"])
+                if action_id in self._actions:
+                    dbg(f"expansion action {action_id} collides; skipped")
+                    continue
+                frames = tuple(_abs_path(self.root, value) for value in raw["frames"])
+                durations = tuple(int(value) for value in raw["duration_ms"])
+                if not frames or len(frames) != len(durations):
+                    dbg(f"expansion {action_id}: count mismatch")
+                    continue
+                if any(value <= 0 for value in durations):
+                    dbg(f"expansion {action_id}: non-positive duration")
+                    continue
+                if any(not path.is_file() for path in frames):
+                    dbg(f"expansion {action_id}: missing frames; skipped")
+                    continue
+                self._actions[action_id] = ActionSpec(
+                    id=action_id,
+                    name_zh=str(raw.get("name_zh", action_id)),
+                    description=str(raw.get("description", "")),
+                    frames=frames,
+                    duration_ms=durations,
+                    loop=bool(raw.get("loop", False)),
+                    trigger=str(raw.get("trigger", "interaction")),
+                    exit_state=str(raw.get("exit_state", "idle")),
+                    canvas=tuple(int(v) for v in raw.get("canvas", [512, 768])),
+                    ground_pivot=tuple(
+                        int(v) for v in raw.get("ground_pivot", [256, 744])
+                    ),
+                    # 生成素材已按统一尺度归一化，注册倍率固定 1.0；
+                    # 两个分量都必须显式给出，否则渲染器会拿到 None。
+                    registration_scale=_parse_registration_scale(
+                        raw.get("registration_scale", 1.0)
+                    )[0],
+                    registration_scale_y=_parse_registration_scale(
+                        raw.get("registration_scale", 1.0)
+                    )[1],
+                )
+                added.append(action_id)
+            except (KeyError, TypeError, ValueError) as exc:
+                dbg(f"expansion entry rejected: {exc}")
+        self.loaded_expansion = tuple(added)
 
     def get(self, action_id: str) -> ActionSpec:
         try:

@@ -1,0 +1,359 @@
+{
+  "schema_version": 1,
+  "decisions": [
+    {
+      "library": "library_v1",
+      "id": "fun_facepalm",
+      "keep_frames": 10,
+      "reason": "0.20 tail cut, N=11"
+    },
+    {
+      "library": "library_v1",
+      "id": "land_recover_v4_12",
+      "keep_frames": 10,
+      "reason": "0.20 tail cut, N=11"
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_task_thinking_v1_12",
+      "keep_frames": 10,
+      "reason": "0.20 tail cut, N=11"
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_tool_working_v1_12",
+      "keep_frames": 10,
+      "reason": "0.20 tail cut, N=11"
+    },
+    {
+      "library": "library_v1",
+      "id": "listen",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_down",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "library_v1",
+      "id": "stand_up",
+      "keep_frames": 44,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_lie_down",
+      "keep_frames": 50,
+      "reason": "0.20 tail cut, N=60"
+    },
+    {
+      "library": "library_v1",
+      "id": "wake_up",
+      "keep_frames": 77,
+      "reason": "0.20 tail cut, N=78"
+    },
+    {
+      "library": "library_v1",
+      "id": "wave",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "celebrate",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "head_pat",
+      "keep_frames": 47,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "belly_ticklish",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "cheek_poke",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "high_five",
+      "keep_frames": 51,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "file_drop_receive",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_bread",
+      "keep_frames": 47,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_refuse",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=53"
+    },
+    {
+      "library": "library_v1",
+      "id": "nod",
+      "keep_frames": 35,
+      "reason": "0.20 tail cut, N=36"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_water",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_note",
+      "keep_frames": 41,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "think_pencil",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_desk",
+      "keep_frames": 30,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "ribbon_adjust",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "turn_show",
+      "keep_frames": 43,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "search_pocket",
+      "keep_frames": 51,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "push_ball",
+      "keep_frames": 37,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "catch_star",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "headphone",
+      "keep_frames": 56,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "lantern_off",
+      "keep_frames": 42,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_hello",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "nod_yes",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shake_head",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "yawn",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cheer_jump",
+      "keep_frames": 22,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_tilt",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shy_look",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "clap_happy",
+      "keep_frames": 56,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "bow",
+      "keep_frames": 42,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "point_forward",
+      "keep_frames": 22,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up",
+      "keep_frames": 51,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cover_mouth",
+      "keep_frames": 38,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "pat_own_chest",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_hair",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch",
+      "keep_frames": 35,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "kneel_look",
+      "keep_frames": 50,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sleepy_nod",
+      "keep_frames": 55,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "happy_sway",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_left",
+      "keep_frames": 45,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_right",
+      "keep_frames": 39,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spin_cheer",
+      "keep_frames": 37,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_tea",
+      "keep_frames": 55,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch_back",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute",
+      "keep_frames": 59,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both",
+      "keep_frames": 60,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "hug_self",
+      "keep_frames": 52,
+      "reason": "0.20 tail cut, N=61"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_sad",
+      "keep_frames": 57,
+      "reason": "0.20 tail cut, N=61"
+    }
+  ]
+}

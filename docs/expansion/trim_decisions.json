@@ -1,0 +1,362 @@
+{
+  "schema_version": 1,
+  "generated_by": "trim_tails decisions from tail_motion.py v2 (metric rule v2-aggressive)",
+  "source_proposal": "/tmp/trim_proposal_v2.json",
+  "rule": "keep = clamp(last_motion+1, max(6, ceil(0.35*N)), N); loop=True 不裁；派生不单独决策",
+  "decisions": [
+    {
+      "library": "library_v1",
+      "id": "fun_facepalm",
+      "keep_frames": 11,
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.0602，P=2.005，N=12"
+    },
+    {
+      "library": "library_v1",
+      "id": "land_recover_v4_12",
+      "keep_frames": 11,
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.4317，P=14.3891，N=12"
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_task_thinking_v1_12",
+      "keep_frames": 11,
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.0649，P=2.1621，N=12"
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_tool_working_v1_12",
+      "keep_frames": 11,
+      "reason": "v2 口径：last_motion=10，keep=last_motion+1；thr=0.0986，P=3.2877，N=12"
+    },
+    {
+      "library": "library_v1",
+      "id": "listen",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0309，P=1.0312，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_down",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0349，P=1.1635，N=62"
+    },
+    {
+      "library": "library_v1",
+      "id": "stand_up",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0978，P=3.2603，N=62"
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_lie_down",
+      "keep_frames": 60,
+      "reason": "v2 口径：last_motion=59，keep=last_motion+1；thr=0.0984，P=3.2785，N=79"
+    },
+    {
+      "library": "library_v1",
+      "id": "wake_up",
+      "keep_frames": 78,
+      "reason": "v2 口径：last_motion=77，keep=last_motion+1；thr=0.141，P=4.6992，N=79"
+    },
+    {
+      "library": "library_v1",
+      "id": "wave",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0278，P=0.9272，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "celebrate",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.1234，P=4.1141，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "head_pat",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0452，P=1.5082，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "belly_ticklish",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0389，P=1.2968，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "cheek_poke",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0355，P=1.1823，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "high_five",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0392，P=1.3059，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "file_drop_receive",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0292，P=0.9748，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_bread",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0596，P=1.9857，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_refuse",
+      "keep_frames": 53,
+      "reason": "v2 口径：last_motion=52，keep=last_motion+1；thr=0.0323，P=1.0773，N=54"
+    },
+    {
+      "library": "library_v1",
+      "id": "nod",
+      "keep_frames": 36,
+      "reason": "v2 口径：last_motion=35，keep=last_motion+1；thr=0.0407，P=1.357，N=37"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0548，P=1.8267，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_water",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0281，P=0.9351，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_note",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.05，P=1.6671，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "think_pencil",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0306，P=1.0189，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_desk",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1169，P=3.8952，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "ribbon_adjust",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0432，P=1.439，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "turn_show",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.2159，P=7.1955，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "search_pocket",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0572，P=1.9072，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "push_ball",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1051，P=3.5022，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "catch_star",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0393，P=1.3106，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "headphone",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1143，P=3.8091，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "lantern_off",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0942，P=3.1406，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_hello",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0651，P=2.1708，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "nod_yes",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0331，P=1.1042，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shake_head",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0345，P=1.1484，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "yawn",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.047，P=1.5674，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cheer_jump",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1732，P=5.774，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_tilt",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0438，P=1.4603，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shy_look",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0371，P=1.2383，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "clap_happy",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.052，P=1.7323，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "bow",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0901，P=3.0037，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "point_forward",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0981，P=3.2702，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0419，P=1.3958，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cover_mouth",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0509，P=1.6955，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "pat_own_chest",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0328，P=1.0934，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_hair",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0211，P=0.7045，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.2119，P=7.0637，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "kneel_look",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.209，P=6.9659，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sleepy_nod",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1299，P=4.3307，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "happy_sway",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0581，P=1.9352，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_left",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1045，P=3.4826，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_right",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0867，P=2.8908，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spin_cheer",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.09，P=3.0007，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_tea",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0304，P=1.0128，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch_back",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0518，P=1.7278，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0398，P=1.3262，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.057，P=1.8989，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.1229，P=4.0965，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "hug_self",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.0697，P=2.3223，N=62"
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_sad",
+      "keep_frames": 61,
+      "reason": "v2 口径：last_motion=60，keep=last_motion+1；thr=0.046，P=1.5325，N=62"
+    }
+  ]
+}

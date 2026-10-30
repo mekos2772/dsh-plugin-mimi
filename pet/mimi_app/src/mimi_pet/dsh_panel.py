@@ -1,10 +1,11 @@
-"""Harness head-top UI: one white input box (+ pending question cards).
+"""Harness 头顶消息栏（已停用，保留为气泡转发器）。
 
-All DSH information — assistant replies, summaries, tool activity, done
-notices — surfaces as transient speech bubbles in the BubbleLayer. This
-window is interaction-only: a Chinese-IME-safe quick input pinned above
-Mimi's head, growing orange-bordered question cards while a DSH question
-waits for the user's answer.
+历史：这里原本是 Mimi 头顶的一个白色输入框（含模式徽章、发送按钮）＋
+橙色提问卡片，镜像 DSH 网页端的交互。
+
+2026-10-30 起按需求去掉消息栏：不再显示任何输入框/卡片，所有 DSH 信息
+（回复、摘要、工具活动、完成提示、提问）只走头顶气泡（BubbleLayer）。
+本类保留全部 sink 方法签名与信号，避免调用方改动；但 UI 永不显示。
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from __future__ import annotations
 import sys
 
 from PySide6.QtCore import QPoint, Qt, Signal, QTimer
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -243,7 +244,8 @@ class DshPanel(QWidget):
         self.mode_badge.setToolTip("当前：工作模式")
         self.quick_input = _QuickInput()
         self.quick_input.setPlaceholderText("输入消息…")
-        send_btn = QPushButton("发送")
+        self.send_btn = QPushButton("发送")
+        send_btn = self.send_btn
         send_btn.setObjectName("sendBtn")
         send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         send_btn.setFixedHeight(30)
@@ -258,10 +260,21 @@ class DshPanel(QWidget):
         outer.addWidget(self._question_host)
         outer.addWidget(self._card)
 
+        self._busy = False
+        self._placeholder = "输入消息…"
+        self._busy_timer = QTimer(self)
+        self._busy_timer.setSingleShot(True)
+        self._busy_timer.setInterval(30000)
+        self._busy_timer.timeout.connect(lambda: self.set_busy(False))
         self.quick_input.submitted.connect(self._quick_send)
         self.quick_input.collapse_requested.connect(self.quick_input.clear)
         self.setFixedWidth(INPUT_W)
         self._relayout()
+        # --- 消息栏停用：UI 永不显示，只保留信号与 sink 方法 ---
+        self.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+        # 移出屏幕，保证 panel.rect() 永远不会命中鼠标（qt_app 用它判断是否在交互）
+        self.move(-10000, -10000)
+        self.hide()
 
     # ------------------------------------------------------------------ layout
 
@@ -275,26 +288,15 @@ class DshPanel(QWidget):
     # ------------------------------------------------------------------ modes
 
     def show_box(self) -> None:
-        """Reveal the input above the head without stealing focus."""
-        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
-        if not self.isVisible():
-            self.show()
-            self.raise_()
+        """消息栏已停用：不显示任何 UI。"""
 
     show_capsule = show_box  # compat alias
 
     def show_expanded(self) -> None:
-        """Compat alias: focus the input for typing."""
-        self.show_panel()
+        """消息栏已停用。"""
 
     def show_panel(self) -> None:
-        """Reveal and focus the input (user-initiated: bubble/menu click)."""
-        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
-        if not self.isVisible():
-            self.show()
-        self.raise_()
-        self.activateWindow()
-        QTimer.singleShot(0, self._focus_quick_input)
+        """消息栏已停用：不再弹出输入框。"""
 
     def _focus_quick_input(self) -> None:
         if not self.isVisible():
@@ -317,17 +319,52 @@ class DshPanel(QWidget):
             | Qt.InputMethodQuery.ImCursorRectangle
         )
 
+    def set_busy(self, busy: bool, hint: str = "") -> None:
+        """发送后进入"思考中"：禁用输入与按钮，收到回复或超时再恢复。"""
+        self._busy = bool(busy)
+        self.send_btn.setEnabled(not busy)
+        self.quick_input.setEnabled(not busy)
+        self.quick_input.setPlaceholderText(hint if busy else self._placeholder)
+        if busy:
+            self._busy_timer.start()
+        else:
+            self._busy_timer.stop()
+
+    def is_busy(self) -> bool:
+        return self._busy
+
     def _quick_send(self, text: str) -> None:
         text = (text or "").strip()
-        if not text:
+        if not text or self._busy:
             return
         self.quick_input.clear()
         self.send_requested.emit(text)
 
     # ------------------------------------------------------------------ position
 
+    def position_at_top(self) -> None:
+        """消息栏已停用，无需定位。"""
+        return
+
+    def _position_at_top_unused(self) -> None:
+        """贴屏幕顶部居中（历史实现，保留备查）。"""
+        screen = QGuiApplication.screenAt(QCursor.pos()) or QGuiApplication.primaryScreen()
+        if screen is None:
+            return
+        geo = screen.availableGeometry()
+        self._anchor = None
+        w, h = self.width(), self.height()
+        x = int(geo.center().x() - w / 2)
+        y = int(geo.top() + 12)
+        x = max(geo.left(), min(x, geo.right() - w))
+        self.move(x, y)
+
     def position_near(self, root_x: float, head_y: float) -> None:
-        """Pin the input box just above the pet's head (centered on it)."""
+        """消息栏已停用，无需定位。"""
+        return
+
+    def _position_near_unused(self, root_x: float, head_y: float) -> None:
+        """Pin the input box just above the pet's head (历史实现，保留备查)。"""
         self._anchor = (root_x, head_y)
         w, h = self.width(), self.height()
         x = int(round(root_x - w / 2.0))
@@ -356,19 +393,23 @@ class DshPanel(QWidget):
         mode_name = getattr(state, "mode_display_name", "") or (
             "桌宠模式" if mode == "agent" else "工作模式"
         )
-        self.mode_badge.setText(mode_name)
-        self.mode_badge.setProperty("mode", mode)
-        self.mode_badge.setToolTip(f"当前：{mode_name}")
-        self.mode_badge.style().unpolish(self.mode_badge)
-        self.mode_badge.style().polish(self.mode_badge)
+        if getattr(self, "_mode_shown", None) != mode:
+            # unpolish/polish 会触发整棵样式树重算，只有模式真的变了才做。
+            self._mode_shown = mode
+            self.mode_badge.setText(mode_name)
+            self.mode_badge.setProperty("mode", mode)
+            self.mode_badge.setToolTip(f"当前：{mode_name}")
+            self.mode_badge.style().unpolish(self.mode_badge)
+            self.mode_badge.style().polish(self.mode_badge)
         harness = getattr(state, "harness_display_name", "") or ""
         if getattr(state, "is_connected", False):
-            if mode == "agent":
-                self.quick_input.setPlaceholderText("和 Mimi 说点什么…")
-            else:
-                self.quick_input.setPlaceholderText(f"跟 {harness or 'DSH'} 工作…")
+            self._placeholder = (
+                "和 Mimi 说点什么…" if mode == "agent" else f"跟 {harness or 'DSH'} 工作…"
+            )
         else:
-            self.quick_input.setPlaceholderText("未连接 DSH")
+            self._placeholder = "未连接 DSH"
+        if not self._busy:
+            self.quick_input.setPlaceholderText(self._placeholder)
         self.set_status(getattr(state, "full_activity", ""))
 
     # ------------------------------------------------------------ sink protocol
@@ -386,16 +427,11 @@ class DshPanel(QWidget):
         """Project picking moved to the pet's right-click Harness menu."""
 
     def append_question(self, question) -> None:
-        """Stack a pending question card above the input."""
-        card = QuestionCard(question)
-        card.answered.connect(self._on_question_answered)
-        self._questions.append(card)
-        self._q_layout.addWidget(card)
-        while len(self._questions) > MAX_QUESTIONS:
-            self._drop_question(self._questions[0])
-        self._relayout()
-        self.show_box()
-        self.raise_()
+        """消息栏停用后，提问改为头顶气泡提示（回答请到 DSH 面板）。"""
+        header = getattr(question, "header", "") or getattr(question, "question", "")
+        text = str(header or "DSH 有一个问题等你回答")
+        self.bubble_requested.emit(f"提问：{text}", "question")
+        dbg(f"question -> bubble: {text[:40]!r}")
 
     def replace_questions(self, questions) -> None:
         """Replace cards after a project switch or a remote resolution."""

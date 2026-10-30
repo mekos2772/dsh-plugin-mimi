@@ -1,0 +1,6837 @@
+{
+  "schema_version": 2,
+  "generated_by": "scripts/pipeline/pose_tails.py",
+  "state": "pristine",
+  "spec": "Lead 2026-10-29：播完一轮就切；still ⇔ iou>=0.9995 且 rgbmov<=P30；keep=tail_start 不加缓冲；下限 max(6,ceil(0.35N))；loop→N",
+  "metric": "alpha>8 掩膜几何（bbox/面积/质心/d）+ 掩膜 IoU + 实体内部 RGB 运动；与主指标 80x120 预乘模糊帧差无共同项",
+  "caveat_iou_unreachable": "iou>=0.9995 在本素材上接近不可达：alpha 边缘逐帧抖动，相邻帧 IoU 常态 0.98–0.999。该阈值实质等价于'两帧完全相同'，只对 slow 变体稳定命中。建议改用 iou>=0.999 或'掩膜面积变化<=0.1%'。见 iou_sensitivity 字段。",
+  "thresholds": {
+    "alpha": 8,
+    "solid_alpha": 200,
+    "iou_still": 0.9995,
+    "rgb_percentile": 30,
+    "floor_frac": 0.35,
+    "floor_min": 6,
+    "off_pose_ratio": 0.6,
+    "off_pose_strong": 0.15,
+    "pose_amp": 0.01,
+    "pose_grad": 0.004,
+    "iou_sensitivity": [
+      0.9995,
+      0.999,
+      0.998,
+      0.995,
+      0.99
+    ]
+  },
+  "totals": {
+    "actions": 87,
+    "trim": 10,
+    "high": 77,
+    "medium": 4,
+    "low": 6,
+    "ends_off_pose": 28,
+    "ends_off_pose_strong": 14,
+    "by_verdict": {
+      "loop-protected": 10,
+      "no-static-tail": 67,
+      "trim": 10
+    },
+    "iou_reachability": {
+      "0.9995": {
+        "actions_with_tail": 10,
+        "mean_tail_len": 0.23
+      },
+      "0.999": {
+        "actions_with_tail": 16,
+        "mean_tail_len": 0.59
+      },
+      "0.998": {
+        "actions_with_tail": 25,
+        "mean_tail_len": 1.07
+      },
+      "0.995": {
+        "actions_with_tail": 38,
+        "mean_tail_len": 2.32
+      },
+      "0.99": {
+        "actions_with_tail": 55,
+        "mean_tail_len": 3.46
+      }
+    }
+  },
+  "ends_off_pose": [
+    {
+      "library": "library_v1",
+      "id": "harness_tool_working_v1_12",
+      "N": 12,
+      "d_last": 0.15922,
+      "d_peak": 0.15922,
+      "ratio": 1.0,
+      "keep": 12,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "search_pocket",
+      "N": 62,
+      "d_last": 0.96442,
+      "d_peak": 0.967,
+      "ratio": 0.9973,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shy_look",
+      "N": 62,
+      "d_last": 0.14799,
+      "d_peak": 0.14915,
+      "ratio": 0.9922,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_lie_down",
+      "N": 79,
+      "d_last": 0.86778,
+      "d_peak": 0.88037,
+      "ratio": 0.9857,
+      "keep": 77,
+      "verdict": "trim",
+      "strong": true
+    },
+    {
+      "library": "library_v1",
+      "id": "stand_up",
+      "N": 62,
+      "d_last": 0.44788,
+      "d_peak": 0.45733,
+      "ratio": 0.9793,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "library_v1",
+      "id": "wake_up",
+      "N": 79,
+      "d_last": 0.88141,
+      "d_peak": 0.91393,
+      "ratio": 0.9644,
+      "keep": 79,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_sad",
+      "N": 62,
+      "d_last": 0.18569,
+      "d_peak": 0.20016,
+      "ratio": 0.9277,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_hold",
+      "N": 64,
+      "d_last": 0.18569,
+      "d_peak": 0.20016,
+      "ratio": 0.9277,
+      "keep": 64,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug",
+      "N": 62,
+      "d_last": 0.11378,
+      "d_peak": 0.12462,
+      "ratio": 0.913,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "kneel_look",
+      "N": 62,
+      "d_last": 0.32194,
+      "d_peak": 0.35305,
+      "ratio": 0.9119,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "think_pencil",
+      "N": 62,
+      "d_last": 0.08458,
+      "d_peak": 0.09295,
+      "ratio": 0.91,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "yawn",
+      "N": 62,
+      "d_last": 0.13,
+      "d_peak": 0.1444,
+      "ratio": 0.9003,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shake_head",
+      "N": 62,
+      "d_last": 0.09677,
+      "d_peak": 0.10835,
+      "ratio": 0.8931,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sleepy_nod",
+      "N": 62,
+      "d_last": 0.32933,
+      "d_peak": 0.37026,
+      "ratio": 0.8895,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both",
+      "N": 62,
+      "d_last": 1.13064,
+      "d_peak": 1.28672,
+      "ratio": 0.8787,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both_slow",
+      "N": 124,
+      "d_last": 1.13064,
+      "d_peak": 1.28672,
+      "ratio": 0.8787,
+      "keep": 122,
+      "verdict": "trim",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute",
+      "N": 62,
+      "d_last": 0.14981,
+      "d_peak": 0.17216,
+      "ratio": 0.8702,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute_hold",
+      "N": 64,
+      "d_last": 0.14981,
+      "d_peak": 0.17216,
+      "ratio": 0.8702,
+      "keep": 64,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_tilt",
+      "N": 62,
+      "d_last": 0.14098,
+      "d_peak": 0.16244,
+      "ratio": 0.8679,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_down",
+      "N": 62,
+      "d_last": 0.35387,
+      "d_peak": 0.40959,
+      "ratio": 0.864,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch",
+      "N": 62,
+      "d_last": 0.39414,
+      "d_peak": 0.46269,
+      "ratio": 0.8518,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch_hold",
+      "N": 64,
+      "d_last": 0.39414,
+      "d_peak": 0.46269,
+      "ratio": 0.8518,
+      "keep": 64,
+      "verdict": "no-static-tail",
+      "strong": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "point_forward",
+      "N": 62,
+      "d_last": 0.14021,
+      "d_peak": 0.16524,
+      "ratio": 0.8485,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_note",
+      "N": 62,
+      "d_last": 0.09612,
+      "d_peak": 0.13108,
+      "ratio": 0.7333,
+      "keep": 60,
+      "verdict": "trim",
+      "strong": false
+    },
+    {
+      "library": "library_v1",
+      "id": "fun_facepalm",
+      "N": 12,
+      "d_last": 0.12372,
+      "d_peak": 0.17721,
+      "ratio": 0.6982,
+      "keep": 12,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up",
+      "N": 62,
+      "d_last": 0.07891,
+      "d_peak": 0.11929,
+      "ratio": 0.6615,
+      "keep": 62,
+      "verdict": "no-static-tail",
+      "strong": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up_slow",
+      "N": 124,
+      "d_last": 0.07891,
+      "d_peak": 0.11929,
+      "ratio": 0.6615,
+      "keep": 122,
+      "verdict": "trim",
+      "strong": false
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_task_thinking_v1_12",
+      "N": 12,
+      "d_last": 0.05662,
+      "d_peak": 0.08772,
+      "ratio": 0.6455,
+      "keep": 12,
+      "verdict": "no-static-tail",
+      "strong": false
+    }
+  ],
+  "keep_diff_vs_main": [
+    {
+      "library": "expansion_v1",
+      "id": "headphone",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_hello",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "nod_yes",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cheer_jump",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_tilt",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shy_look",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "point_forward",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_hair",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "happy_sway",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch_back",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_sad",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 62,
+      "diff": 31,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_note",
+      "N": 62,
+      "keep_main": 31,
+      "keep_crosscheck": 60,
+      "diff": 29,
+      "diff_pct": 0.4677,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "trim",
+      "ends_off_pose": true
+    },
+    {
+      "library": "library_v1",
+      "id": "listen",
+      "N": 54,
+      "keep_main": 27,
+      "keep_crosscheck": 54,
+      "diff": 27,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "celebrate",
+      "N": 54,
+      "keep_main": 27,
+      "keep_crosscheck": 54,
+      "diff": 27,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "cheek_poke",
+      "N": 54,
+      "keep_main": 27,
+      "keep_crosscheck": 54,
+      "diff": 27,
+      "diff_pct": 0.5,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "catch_star",
+      "N": 62,
+      "keep_main": 36,
+      "keep_crosscheck": 62,
+      "diff": 26,
+      "diff_pct": 0.4194,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute",
+      "N": 62,
+      "keep_main": 36,
+      "keep_crosscheck": 62,
+      "diff": 26,
+      "diff_pct": 0.4194,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cover_mouth",
+      "N": 62,
+      "keep_main": 39,
+      "keep_crosscheck": 62,
+      "diff": 23,
+      "diff_pct": 0.371,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spin_cheer",
+      "N": 62,
+      "keep_main": 39,
+      "keep_crosscheck": 62,
+      "diff": 23,
+      "diff_pct": 0.371,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "yawn",
+      "N": 62,
+      "keep_main": 41,
+      "keep_crosscheck": 62,
+      "diff": 21,
+      "diff_pct": 0.3387,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_right",
+      "N": 62,
+      "keep_main": 41,
+      "keep_crosscheck": 62,
+      "diff": 21,
+      "diff_pct": 0.3387,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "ribbon_adjust",
+      "N": 62,
+      "keep_main": 42,
+      "keep_crosscheck": 62,
+      "diff": 20,
+      "diff_pct": 0.3226,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "push_ball",
+      "N": 62,
+      "keep_main": 42,
+      "keep_crosscheck": 62,
+      "diff": 20,
+      "diff_pct": 0.3226,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "pat_own_chest",
+      "N": 62,
+      "keep_main": 43,
+      "keep_crosscheck": 62,
+      "diff": 19,
+      "diff_pct": 0.3065,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_left",
+      "N": 62,
+      "keep_main": 43,
+      "keep_crosscheck": 62,
+      "diff": 19,
+      "diff_pct": 0.3065,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "nod",
+      "N": 37,
+      "keep_main": 19,
+      "keep_crosscheck": 37,
+      "diff": 18,
+      "diff_pct": 0.4865,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "bow",
+      "N": 62,
+      "keep_main": 44,
+      "keep_crosscheck": 62,
+      "diff": 18,
+      "diff_pct": 0.2903,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "turn_show",
+      "N": 62,
+      "keep_main": 45,
+      "keep_crosscheck": 62,
+      "diff": 17,
+      "diff_pct": 0.2742,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "think_pencil",
+      "N": 62,
+      "keep_main": 46,
+      "keep_crosscheck": 62,
+      "diff": 16,
+      "diff_pct": 0.2581,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "search_pocket",
+      "N": 62,
+      "keep_main": 46,
+      "keep_crosscheck": 62,
+      "diff": 16,
+      "diff_pct": 0.2581,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "lantern_off",
+      "N": 62,
+      "keep_main": 46,
+      "keep_crosscheck": 62,
+      "diff": 16,
+      "diff_pct": 0.2581,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_down",
+      "N": 62,
+      "keep_main": 47,
+      "keep_crosscheck": 62,
+      "diff": 15,
+      "diff_pct": 0.2419,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_lie_down",
+      "N": 79,
+      "keep_main": 62,
+      "keep_crosscheck": 77,
+      "diff": 15,
+      "diff_pct": 0.1899,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "trim",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "clap_happy",
+      "N": 62,
+      "keep_main": 48,
+      "keep_crosscheck": 62,
+      "diff": 14,
+      "diff_pct": 0.2258,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "wave",
+      "N": 54,
+      "keep_main": 41,
+      "keep_crosscheck": 54,
+      "diff": 13,
+      "diff_pct": 0.2407,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "file_drop_receive",
+      "N": 54,
+      "keep_main": 41,
+      "keep_crosscheck": 54,
+      "diff": 13,
+      "diff_pct": 0.2407,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_refuse",
+      "N": 54,
+      "keep_main": 41,
+      "keep_crosscheck": 54,
+      "diff": 13,
+      "diff_pct": 0.2407,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "wake_up",
+      "N": 79,
+      "keep_main": 67,
+      "keep_crosscheck": 79,
+      "diff": 12,
+      "diff_pct": 0.1519,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "library_v1",
+      "id": "head_pat",
+      "N": 54,
+      "keep_main": 42,
+      "keep_crosscheck": 54,
+      "diff": 12,
+      "diff_pct": 0.2222,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch",
+      "N": 62,
+      "keep_main": 50,
+      "keep_crosscheck": 62,
+      "diff": 12,
+      "diff_pct": 0.1935,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "library_v1",
+      "id": "stand_up",
+      "N": 62,
+      "keep_main": 51,
+      "keep_crosscheck": 62,
+      "diff": 11,
+      "diff_pct": 0.1774,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shake_head",
+      "N": 62,
+      "keep_main": 51,
+      "keep_crosscheck": 62,
+      "diff": 11,
+      "diff_pct": 0.1774,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_water",
+      "N": 62,
+      "keep_main": 52,
+      "keep_crosscheck": 62,
+      "diff": 10,
+      "diff_pct": 0.1613,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    },
+    {
+      "library": "expansion_v1",
+      "id": "kneel_look",
+      "N": 62,
+      "keep_main": 52,
+      "keep_crosscheck": 62,
+      "diff": 10,
+      "diff_pct": 0.1613,
+      "conflict": true,
+      "main_flags": [
+        "ends-off-pose"
+      ],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": true
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_tea",
+      "N": 62,
+      "keep_main": 52,
+      "keep_crosscheck": 62,
+      "diff": 10,
+      "diff_pct": 0.1613,
+      "conflict": true,
+      "main_flags": [],
+      "baseline": "frozen",
+      "verdict": "no-static-tail",
+      "ends_off_pose": false
+    }
+  ],
+  "main_floor_analysis": {
+    "source_of_truth": "冻结的 pre-trim trim_proposal.json（20:25），字段 raw_keep_2F/keep/floor",
+    "floor_bound": {
+      "agreement": {
+        "n": 21,
+        "median_abs_diff": 25.0,
+        "within_3_frames": 4,
+        "within_15pct_n": 4
+      },
+      "actions": [
+        {
+          "library": "library_v1",
+          "id": "fun_facepalm",
+          "N": 12,
+          "raw_keep_2F": 2,
+          "keep_floor": 6,
+          "keep_main": 12,
+          "geo_plateau_keep": 11,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "library_v1",
+          "id": "land_recover_v4_12",
+          "N": 12,
+          "raw_keep_2F": 2,
+          "keep_floor": 6,
+          "keep_main": 12,
+          "geo_plateau_keep": 11,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "library_v1",
+          "id": "harness_task_thinking_v1_12",
+          "N": 12,
+          "raw_keep_2F": 2,
+          "keep_floor": 6,
+          "keep_main": 12,
+          "geo_plateau_keep": 11,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "library_v1",
+          "id": "harness_tool_working_v1_12",
+          "N": 12,
+          "raw_keep_2F": 2,
+          "keep_floor": 6,
+          "keep_main": 12,
+          "geo_plateau_keep": 11,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "library_v1",
+          "id": "listen",
+          "N": 54,
+          "raw_keep_2F": 2,
+          "keep_floor": 27,
+          "keep_main": 27,
+          "geo_plateau_keep": 52,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "library_v1",
+          "id": "celebrate",
+          "N": 54,
+          "raw_keep_2F": 2,
+          "keep_floor": 27,
+          "keep_main": 27,
+          "geo_plateau_keep": 53,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "library_v1",
+          "id": "cheek_poke",
+          "N": 54,
+          "raw_keep_2F": 15,
+          "keep_floor": 27,
+          "keep_main": 27,
+          "geo_plateau_keep": 53,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "library_v1",
+          "id": "nod",
+          "N": 37,
+          "raw_keep_2F": 2,
+          "keep_floor": 19,
+          "keep_main": 19,
+          "geo_plateau_keep": 35,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "peek_note",
+          "N": 62,
+          "raw_keep_2F": 15,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 55,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "expansion_v1",
+          "id": "headphone",
+          "N": 62,
+          "raw_keep_2F": 8,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 61,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "wave_hello",
+          "N": 62,
+          "raw_keep_2F": 9,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 61,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "nod_yes",
+          "N": 62,
+          "raw_keep_2F": 26,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 59,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "cheer_jump",
+          "N": 62,
+          "raw_keep_2F": 18,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 61,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "listen_tilt",
+          "N": 62,
+          "raw_keep_2F": 12,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 52,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "expansion_v1",
+          "id": "shy_look",
+          "N": 62,
+          "raw_keep_2F": 12,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 60,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "expansion_v1",
+          "id": "point_forward",
+          "N": 62,
+          "raw_keep_2F": 21,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 49,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "expansion_v1",
+          "id": "tidy_hair",
+          "N": 62,
+          "raw_keep_2F": 10,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 60,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "happy_sway",
+          "N": 62,
+          "raw_keep_2F": 2,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 61,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "stretch_back",
+          "N": 62,
+          "raw_keep_2F": 2,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 61,
+          "floor_bound": true,
+          "ends_off_pose": false
+        },
+        {
+          "library": "expansion_v1",
+          "id": "shrug",
+          "N": 62,
+          "raw_keep_2F": 22,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 54,
+          "floor_bound": true,
+          "ends_off_pose": true
+        },
+        {
+          "library": "expansion_v1",
+          "id": "look_down_sad",
+          "N": 62,
+          "raw_keep_2F": 27,
+          "keep_floor": 31,
+          "keep_main": 31,
+          "geo_plateau_keep": 53,
+          "floor_bound": true,
+          "ends_off_pose": true
+        }
+      ]
+    },
+    "not_floor_bound": {
+      "agreement": {
+        "n": 0,
+        "median_abs_diff": 0,
+        "within_3_frames": 0,
+        "within_15pct_n": 0
+      },
+      "actions": []
+    },
+    "note": "floor-bound 的最终 keep 完全由 keep_floor 决定（= 0.5N），与静止尾巴无关。"
+  },
+  "n_validation_failures": [],
+  "actions": [
+    {
+      "library": "library_v1",
+      "id": "fun_facepalm",
+      "N": 12,
+      "kind": "source",
+      "keep": 12,
+      "keep_pose": 11,
+      "keep_delta_pose": 1,
+      "tail_start": 12,
+      "tail_start_frame1": 13,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.12372,
+      "d_peak": 0.17721,
+      "d_last_ratio": 0.6982,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 6,
+      "clamped": false,
+      "rgb_thr_p30": 26.0788,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 12
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "land_recover_v4_12",
+      "N": 12,
+      "kind": "source",
+      "keep": 12,
+      "keep_pose": 11,
+      "keep_delta_pose": 1,
+      "tail_start": 12,
+      "tail_start_frame1": 13,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.45665,
+      "d_peak": 0.77314,
+      "d_last_ratio": 0.5906,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 6,
+      "clamped": false,
+      "rgb_thr_p30": 53.8319,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 12
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_task_thinking_v1_12",
+      "N": 12,
+      "kind": "source",
+      "keep": 12,
+      "keep_pose": 11,
+      "keep_delta_pose": 1,
+      "tail_start": 12,
+      "tail_start_frame1": 13,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.05662,
+      "d_peak": 0.08772,
+      "d_last_ratio": 0.6455,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 6,
+      "clamped": false,
+      "rgb_thr_p30": 20.5632,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 12
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "harness_tool_working_v1_12",
+      "N": 12,
+      "kind": "source",
+      "keep": 12,
+      "keep_pose": 11,
+      "keep_delta_pose": 1,
+      "tail_start": 12,
+      "tail_start_frame1": 13,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.15922,
+      "d_peak": 0.15922,
+      "d_last_ratio": 1.0,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 6,
+      "clamped": false,
+      "rgb_thr_p30": 21.1508,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 12
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 12
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "listen",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 52,
+      "keep_delta_pose": 2,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01901,
+      "d_peak": 0.11375,
+      "d_last_ratio": 0.1672,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 10.9165,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 54
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_down",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 47,
+      "keep_delta_pose": 15,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.35387,
+      "d_peak": 0.40959,
+      "d_last_ratio": 0.864,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 10.5356,
+      "still_pair_frac": 0.0492,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 1,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.99": {
+          "tail_len": 7,
+          "keep": 55
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "sit_idle",
+      "N": 18,
+      "kind": "source",
+      "keep": 18,
+      "keep_pose": 16,
+      "keep_delta_pose": 2,
+      "tail_start": 18,
+      "tail_start_frame1": 19,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.02504,
+      "d_peak": 0.11116,
+      "d_last_ratio": 0.2253,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 7,
+      "clamped": false,
+      "rgb_thr_p30": 10.4669,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 18
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 18
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 18
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 18
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 15
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "stand_up",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 51,
+      "keep_delta_pose": 11,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.44788,
+      "d_peak": 0.45733,
+      "d_last_ratio": 0.9793,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.6707,
+      "still_pair_frac": 0.0164,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 5,
+          "keep": 57
+        },
+        "iou>=0.99": {
+          "tail_len": 7,
+          "keep": 55
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_lie_down",
+      "N": 79,
+      "kind": "source",
+      "keep": 77,
+      "keep_pose": 53,
+      "keep_delta_pose": 24,
+      "tail_start": 77,
+      "tail_start_frame1": 78,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0253,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.86778,
+      "d_peak": 0.88037,
+      "d_last_ratio": 0.9857,
+      "verdict": "trim",
+      "confidence": "medium",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 28,
+      "clamped": false,
+      "rgb_thr_p30": 2.5259,
+      "still_pair_frac": 0.0897,
+      "iou_tail_min": 0.99964,
+      "rgbmov_tail": 1.1086,
+      "dmed_tail": 1.0,
+      "corr_tail": -0.326,
+      "d_range_tail": 7e-05,
+      "span_iou": 0.99964,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 77
+        },
+        "iou>=0.999": {
+          "tail_len": 17,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 20,
+          "keep": 59
+        },
+        "iou>=0.995": {
+          "tail_len": 20,
+          "keep": 59
+        },
+        "iou>=0.99": {
+          "tail_len": 20,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "全片只有 9% 的帧对满足 still：iou>=0.9995 在本素材上接近不可达（alpha 边缘抖动）",
+        "ends_off_pose：d_last/peak=0.99 > 0.6，结尾停在偏移姿势，裁完不会回到待机"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "sleep_loop",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 49,
+      "keep_delta_pose": 5,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.02256,
+      "d_peak": 0.0643,
+      "d_last_ratio": 0.3508,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 8.3454,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 52
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "wake_up",
+      "N": 79,
+      "kind": "source",
+      "keep": 79,
+      "keep_pose": 75,
+      "keep_delta_pose": 4,
+      "tail_start": 79,
+      "tail_start_frame1": 80,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.88141,
+      "d_peak": 0.91393,
+      "d_last_ratio": 0.9644,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 28,
+      "clamped": false,
+      "rgb_thr_p30": 12.9609,
+      "still_pair_frac": 0.0385,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 79
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 79
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 79
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 77
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 77
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "walk_left",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0363,
+      "d_peak": 0.09894,
+      "d_last_ratio": 0.3669,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 14.5279,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "walk_right",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.03709,
+      "d_peak": 0.09728,
+      "d_last_ratio": 0.3813,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 14.5323,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "wave",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 49,
+      "keep_delta_pose": 5,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00619,
+      "d_peak": 0.10467,
+      "d_last_ratio": 0.0592,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 9.3733,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 52
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "celebrate",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 53,
+      "keep_delta_pose": 1,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.04142,
+      "d_peak": 0.15465,
+      "d_last_ratio": 0.2678,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 22.4551,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 54
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "head_pat",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 51,
+      "keep_delta_pose": 3,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00668,
+      "d_peak": 0.13623,
+      "d_last_ratio": 0.049,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 8.0594,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 3,
+          "keep": 51
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "belly_ticklish",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 53,
+      "keep_delta_pose": 1,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.009,
+      "d_peak": 0.11205,
+      "d_last_ratio": 0.0803,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 11.5654,
+      "still_pair_frac": 0.0377,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 49
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "cheek_poke",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 53,
+      "keep_delta_pose": 1,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0086,
+      "d_peak": 0.09208,
+      "d_last_ratio": 0.0934,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 4.9339,
+      "still_pair_frac": 0.1132,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 54
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "high_five",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 51,
+      "keep_delta_pose": 3,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.02945,
+      "d_peak": 0.08353,
+      "d_last_ratio": 0.3525,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 7.4725,
+      "still_pair_frac": 0.0189,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "file_drop_receive",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 52,
+      "keep_delta_pose": 2,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01779,
+      "d_peak": 0.09113,
+      "d_last_ratio": 0.1953,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 7.9574,
+      "still_pair_frac": 0.0377,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 52
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 52
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 52
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_bread",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 49,
+      "keep_delta_pose": 5,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00924,
+      "d_peak": 0.11959,
+      "d_last_ratio": 0.0773,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 8.4714,
+      "still_pair_frac": 0.0189,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 49
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "feed_refuse",
+      "N": 54,
+      "kind": "source",
+      "keep": 54,
+      "keep_pose": 53,
+      "keep_delta_pose": 1,
+      "tail_start": 54,
+      "tail_start_frame1": 55,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00394,
+      "d_peak": 0.11244,
+      "d_last_ratio": 0.0351,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 19,
+      "clamped": false,
+      "rgb_thr_p30": 7.4837,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 52
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "library_v1",
+      "id": "nod",
+      "N": 37,
+      "kind": "source",
+      "keep": 37,
+      "keep_pose": 35,
+      "keep_delta_pose": 2,
+      "tail_start": 37,
+      "tail_start_frame1": 38,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01976,
+      "d_peak": 0.13107,
+      "d_last_ratio": 0.1508,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        512,
+        768
+      ],
+      "floor": 13,
+      "clamped": false,
+      "rgb_thr_p30": 14.6043,
+      "still_pair_frac": 0.0278,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 37
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 37
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 37
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 37
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 37
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 60,
+      "keep_delta_pose": 2,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00863,
+      "d_peak": 0.23387,
+      "d_last_ratio": 0.0369,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 11.9179,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_water",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 54,
+      "keep_delta_pose": 8,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01887,
+      "d_peak": 0.08402,
+      "d_last_ratio": 0.2246,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.8843,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.995": {
+          "tail_len": 10,
+          "keep": 52
+        },
+        "iou>=0.99": {
+          "tail_len": 11,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_note",
+      "N": 62,
+      "kind": "source",
+      "keep": 60,
+      "keep_pose": 55,
+      "keep_delta_pose": 5,
+      "tail_start": 60,
+      "tail_start_frame1": 61,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0323,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.09612,
+      "d_peak": 0.13108,
+      "d_last_ratio": 0.7333,
+      "verdict": "trim",
+      "confidence": "medium",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.9627,
+      "still_pair_frac": 0.0164,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 1,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 60
+        }
+      },
+      "notes": [
+        "全片只有 2% 的帧对满足 still：iou>=0.9995 在本素材上接近不可达（alpha 边缘抖动）",
+        "ends_off_pose：d_last/peak=0.73 > 0.6，结尾停在偏移姿势，裁完不会回到待机"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "think_pencil",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 51,
+      "keep_delta_pose": 11,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.08458,
+      "d_peak": 0.09295,
+      "d_last_ratio": 0.91,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.9344,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_desk",
+      "N": 62,
+      "kind": "source",
+      "keep": 60,
+      "keep_pose": 50,
+      "keep_delta_pose": 10,
+      "tail_start": 60,
+      "tail_start_frame1": 61,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0323,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.17133,
+      "d_peak": 0.48322,
+      "d_last_ratio": 0.3546,
+      "verdict": "trim",
+      "confidence": "medium",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.9449,
+      "still_pair_frac": 0.0164,
+      "iou_tail_min": 0.999663,
+      "rgbmov_tail": 4.2662,
+      "dmed_tail": 3.0,
+      "corr_tail": -0.361,
+      "d_range_tail": 9e-05,
+      "span_iou": 0.999663,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.999": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.998": {
+          "tail_len": 7,
+          "keep": 55
+        },
+        "iou>=0.995": {
+          "tail_len": 11,
+          "keep": 51
+        },
+        "iou>=0.99": {
+          "tail_len": 11,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "全片只有 2% 的帧对满足 still：iou>=0.9995 在本素材上接近不可达（alpha 边缘抖动）"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "ribbon_adjust",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 59,
+      "keep_delta_pose": 3,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00808,
+      "d_peak": 0.14962,
+      "d_last_ratio": 0.054,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 8.9422,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "turn_show",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.10978,
+      "d_peak": 1.42666,
+      "d_last_ratio": 0.0769,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 11.5915,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "search_pocket",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 49,
+      "keep_delta_pose": 13,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.96442,
+      "d_peak": 0.967,
+      "d_last_ratio": 0.9973,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.6517,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 11,
+          "keep": 51
+        },
+        "iou>=0.99": {
+          "tail_len": 11,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "push_ball",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 58,
+      "keep_delta_pose": 4,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.23831,
+      "d_peak": 1.30979,
+      "d_last_ratio": 0.1819,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 10.8844,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 60
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "catch_star",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 57,
+      "keep_delta_pose": 5,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.06897,
+      "d_peak": 0.12208,
+      "d_last_ratio": 0.565,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 10.6759,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 6,
+          "keep": 56
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "headphone",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.13856,
+      "d_peak": 0.25495,
+      "d_last_ratio": 0.5435,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 17.3183,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "lantern_off",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 52,
+      "keep_delta_pose": 10,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.16154,
+      "d_peak": 0.33693,
+      "d_last_ratio": 0.4794,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.1051,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 15,
+          "keep": 47
+        },
+        "iou>=0.99": {
+          "tail_len": 16,
+          "keep": 46
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_hello",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01198,
+      "d_peak": 0.165,
+      "d_last_ratio": 0.0726,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 14.2913,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "nod_yes",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 59,
+      "keep_delta_pose": 3,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.04476,
+      "d_peak": 0.09741,
+      "d_last_ratio": 0.4595,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.6699,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shake_head",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 52,
+      "keep_delta_pose": 10,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.09677,
+      "d_peak": 0.10835,
+      "d_last_ratio": 0.8931,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 8.4406,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "yawn",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 51,
+      "keep_delta_pose": 11,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.13,
+      "d_peak": 0.1444,
+      "d_last_ratio": 0.9003,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.4222,
+      "still_pair_frac": 0.0656,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cheer_jump",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0239,
+      "d_peak": 0.36662,
+      "d_last_ratio": 0.0652,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 10.2001,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_tilt",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 52,
+      "keep_delta_pose": 10,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.14098,
+      "d_peak": 0.16244,
+      "d_last_ratio": 0.8679,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 8.0014,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shy_look",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 60,
+      "keep_delta_pose": 2,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.14799,
+      "d_peak": 0.14915,
+      "d_last_ratio": 0.9922,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.4704,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 57
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "clap_happy",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 51,
+      "keep_delta_pose": 11,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.04337,
+      "d_peak": 0.11711,
+      "d_last_ratio": 0.3704,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.9122,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 5,
+          "keep": 57
+        },
+        "iou>=0.99": {
+          "tail_len": 11,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "bow",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01427,
+      "d_peak": 0.24373,
+      "d_last_ratio": 0.0586,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 8.0244,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 7,
+          "keep": 55
+        },
+        "iou>=0.99": {
+          "tail_len": 7,
+          "keep": 55
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "point_forward",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 49,
+      "keep_delta_pose": 13,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.14021,
+      "d_peak": 0.16524,
+      "d_last_ratio": 0.8485,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.8589,
+      "still_pair_frac": 0.0164,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 57,
+      "keep_delta_pose": 5,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.07891,
+      "d_peak": 0.11929,
+      "d_last_ratio": 0.6615,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.9287,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 4,
+          "keep": 58
+        },
+        "iou>=0.99": {
+          "tail_len": 11,
+          "keep": 51
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cover_mouth",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 56,
+      "keep_delta_pose": 6,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01649,
+      "d_peak": 0.11993,
+      "d_last_ratio": 0.1375,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 5.2791,
+      "still_pair_frac": 0.0492,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 60
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "pat_own_chest",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 58,
+      "keep_delta_pose": 4,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.03934,
+      "d_peak": 0.0933,
+      "d_last_ratio": 0.4216,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.1199,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 9,
+          "keep": 53
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_hair",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 60,
+      "keep_delta_pose": 2,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0065,
+      "d_peak": 0.11429,
+      "d_last_ratio": 0.0569,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.2925,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 60
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 38,
+      "keep_delta_pose": 24,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.39414,
+      "d_peak": 0.46269,
+      "d_last_ratio": 0.8518,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 10.0469,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.995": {
+          "tail_len": 6,
+          "keep": 56
+        },
+        "iou>=0.99": {
+          "tail_len": 7,
+          "keep": 55
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "kneel_look",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 57,
+      "keep_delta_pose": 5,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.32194,
+      "d_peak": 0.35305,
+      "d_last_ratio": 0.9119,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.3758,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sleepy_nod",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 57,
+      "keep_delta_pose": 5,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.32933,
+      "d_peak": 0.37026,
+      "d_last_ratio": 0.8895,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.2578,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.995": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 57
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "happy_sway",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.06175,
+      "d_peak": 0.1652,
+      "d_last_ratio": 0.3738,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 23.5707,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_left",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00831,
+      "d_peak": 0.71023,
+      "d_last_ratio": 0.0117,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 13.8951,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_right",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 60,
+      "keep_delta_pose": 2,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.04036,
+      "d_peak": 0.29492,
+      "d_last_ratio": 0.1369,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.8524,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spin_cheer",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 56,
+      "keep_delta_pose": 6,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00488,
+      "d_peak": 0.52189,
+      "d_last_ratio": 0.0093,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 11.9341,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.998": {
+          "tail_len": 5,
+          "keep": 57
+        },
+        "iou>=0.995": {
+          "tail_len": 7,
+          "keep": 55
+        },
+        "iou>=0.99": {
+          "tail_len": 7,
+          "keep": 55
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_tea",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 49,
+      "keep_delta_pose": 13,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.02695,
+      "d_peak": 0.12633,
+      "d_last_ratio": 0.2133,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.5225,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.998": {
+          "tail_len": 7,
+          "keep": 55
+        },
+        "iou>=0.995": {
+          "tail_len": 10,
+          "keep": 52
+        },
+        "iou>=0.99": {
+          "tail_len": 10,
+          "keep": 52
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch_back",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00909,
+      "d_peak": 0.30808,
+      "d_last_ratio": 0.0295,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.5436,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 54,
+      "keep_delta_pose": 8,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.11378,
+      "d_peak": 0.12462,
+      "d_last_ratio": 0.913,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 8.9756,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 54,
+      "keep_delta_pose": 8,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.14981,
+      "d_peak": 0.17216,
+      "d_last_ratio": 0.8702,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 8.8902,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 1.13064,
+      "d_peak": 1.28672,
+      "d_last_ratio": 0.8787,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 9.0572,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "hug_self",
+      "N": 62,
+      "kind": "source",
+      "keep": 60,
+      "keep_pose": 55,
+      "keep_delta_pose": 5,
+      "tail_start": 60,
+      "tail_start_frame1": 61,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0323,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00542,
+      "d_peak": 0.16008,
+      "d_last_ratio": 0.0338,
+      "verdict": "trim",
+      "confidence": "medium",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.6815,
+      "still_pair_frac": 0.0328,
+      "iou_tail_min": 0.999711,
+      "rgbmov_tail": 4.0866,
+      "dmed_tail": 3.0,
+      "corr_tail": -0.464,
+      "d_range_tail": 0.00027,
+      "span_iou": 0.999711,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.999": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.998": {
+          "tail_len": 5,
+          "keep": 57
+        },
+        "iou>=0.995": {
+          "tail_len": 7,
+          "keep": 55
+        },
+        "iou>=0.99": {
+          "tail_len": 10,
+          "keep": 52
+        }
+      },
+      "notes": [
+        "全片只有 3% 的帧对满足 still：iou>=0.9995 在本素材上接近不可达（alpha 边缘抖动）"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_sad",
+      "N": 62,
+      "kind": "source",
+      "keep": 62,
+      "keep_pose": 53,
+      "keep_delta_pose": 9,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.18569,
+      "d_peak": 0.20016,
+      "d_last_ratio": 0.9277,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": null,
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.4209,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 60
+        },
+        "iou>=0.995": {
+          "tail_len": 5,
+          "keep": 57
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 57
+        }
+      },
+      "notes": [
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_desk_reverse",
+      "N": 62,
+      "kind": "derived",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.16641,
+      "d_peak": 0.46107,
+      "d_last_ratio": 0.3609,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "reverse",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 6.9449,
+      "still_pair_frac": 0.0164,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "派生动作（reverse）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_slow",
+      "N": 124,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 122,
+      "keep_delta_pose": 0,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0161,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01198,
+      "d_peak": 0.165,
+      "d_last_ratio": 0.0726,
+      "verdict": "trim",
+      "confidence": "low",
+      "loop": false,
+      "variant": "slow",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 44,
+      "clamped": false,
+      "rgb_thr_p30": 0.0,
+      "still_pair_frac": 0.5041,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 62,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "slow 变体每帧复制两遍，iou/rgbmov 在 0 与 1 之间交替，尾部测量不具物理意义",
+        "派生动作（slow）：帧序由源动作重排，结论应与源动作一致"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "nod_slow",
+      "N": 124,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 118,
+      "keep_delta_pose": 4,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0161,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.04476,
+      "d_peak": 0.09741,
+      "d_last_ratio": 0.4595,
+      "verdict": "trim",
+      "confidence": "low",
+      "loop": false,
+      "variant": "slow",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 44,
+      "clamped": false,
+      "rgb_thr_p30": 0.0,
+      "still_pair_frac": 0.5041,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 62,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "slow 变体每帧复制两遍，iou/rgbmov 在 0 与 1 之间交替，尾部测量不具物理意义",
+        "派生动作（slow）：帧序由源动作重排，结论应与源动作一致"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "listen_pingpong",
+      "N": 122,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 121,
+      "keep_delta_pose": 1,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00213,
+      "d_peak": 0.16244,
+      "d_last_ratio": 0.0131,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": "pingpong",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 43,
+      "clamped": false,
+      "rgb_thr_p30": 8.0014,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "happy_sway_pingpong",
+      "N": 122,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 121,
+      "keep_delta_pose": 1,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00585,
+      "d_peak": 0.1652,
+      "d_last_ratio": 0.0354,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": "pingpong",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 43,
+      "clamped": false,
+      "rgb_thr_p30": 23.5707,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "stretch_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 62,
+      "keep_delta_pose": 2,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00863,
+      "d_peak": 0.23387,
+      "d_last_ratio": 0.0369,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 11.347,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 61
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_water_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 56,
+      "keep_delta_pose": 8,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01887,
+      "d_peak": 0.08402,
+      "d_last_ratio": 0.2246,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 9.3137,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 10,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 11,
+          "keep": 53
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "salute_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 56,
+      "keep_delta_pose": 8,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.14981,
+      "d_peak": 0.17216,
+      "d_last_ratio": 0.8702,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 8.7658,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 64
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "shrug_pingpong",
+      "N": 122,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 121,
+      "keep_delta_pose": 1,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0053,
+      "d_peak": 0.12462,
+      "d_last_ratio": 0.0426,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": "pingpong",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 43,
+      "clamped": false,
+      "rgb_thr_p30": 8.9756,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_up_slow",
+      "N": 124,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 114,
+      "keep_delta_pose": 8,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0161,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.07891,
+      "d_peak": 0.11929,
+      "d_last_ratio": 0.6615,
+      "verdict": "trim",
+      "confidence": "low",
+      "loop": false,
+      "variant": "slow",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 44,
+      "clamped": false,
+      "rgb_thr_p30": 0.0,
+      "still_pair_frac": 0.5041,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 62,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "slow 变体每帧复制两遍，iou/rgbmov 在 0 与 1 之间交替，尾部测量不具物理意义",
+        "派生动作（slow）：帧序由源动作重排，结论应与源动作一致",
+        "ends_off_pose：d_last/peak=0.66 > 0.6，结尾停在偏移姿势，裁完不会回到待机"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "cover_mouth_slow",
+      "N": 124,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 112,
+      "keep_delta_pose": 10,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0161,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.01649,
+      "d_peak": 0.11993,
+      "d_last_ratio": 0.1375,
+      "verdict": "trim",
+      "confidence": "low",
+      "loop": false,
+      "variant": "slow",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 44,
+      "clamped": false,
+      "rgb_thr_p30": 0.0,
+      "still_pair_frac": 0.5041,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 62,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "slow 变体每帧复制两遍，iou/rgbmov 在 0 与 1 之间交替，尾部测量不具物理意义",
+        "派生动作（slow）：帧序由源动作重排，结论应与源动作一致"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "pat_chest_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 60,
+      "keep_delta_pose": 4,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.03934,
+      "d_peak": 0.0933,
+      "d_last_ratio": 0.4216,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 8.795,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.99": {
+          "tail_len": 9,
+          "keep": 55
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "tidy_hair_pingpong",
+      "N": 122,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 119,
+      "keep_delta_pose": 3,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00135,
+      "d_peak": 0.11429,
+      "d_last_ratio": 0.0118,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": "pingpong",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 43,
+      "clamped": false,
+      "rgb_thr_p30": 7.2925,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 120
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 120
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 120
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spring_reverse",
+      "N": 62,
+      "kind": "derived",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0239,
+      "d_peak": 0.35523,
+      "d_last_ratio": 0.0673,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "reverse",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 10.2001,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "派生动作（reverse）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sit_stretch_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 40,
+      "keep_delta_pose": 24,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.39414,
+      "d_peak": 0.46269,
+      "d_last_ratio": 0.8518,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 9.3329,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 6,
+          "keep": 58
+        },
+        "iou>=0.99": {
+          "tail_len": 7,
+          "keep": 57
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_left_reverse",
+      "N": 62,
+      "kind": "derived",
+      "keep": 62,
+      "keep_pose": 61,
+      "keep_delta_pose": 1,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.0083,
+      "d_peak": 0.71286,
+      "d_last_ratio": 0.0116,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "reverse",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 13.8951,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 62
+        }
+      },
+      "notes": [
+        "派生动作（reverse）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "peek_right_reverse",
+      "N": 62,
+      "kind": "derived",
+      "keep": 62,
+      "keep_pose": 59,
+      "keep_delta_pose": 3,
+      "tail_start": 62,
+      "tail_start_frame1": 63,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.04036,
+      "d_peak": 0.29307,
+      "d_last_ratio": 0.1377,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "reverse",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 22,
+      "clamped": false,
+      "rgb_thr_p30": 7.8524,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.995": {
+          "tail_len": 3,
+          "keep": 59
+        },
+        "iou>=0.99": {
+          "tail_len": 3,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "派生动作（reverse）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "spin_cheer_slow",
+      "N": 124,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 112,
+      "keep_delta_pose": 10,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0161,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00488,
+      "d_peak": 0.52189,
+      "d_last_ratio": 0.0093,
+      "verdict": "trim",
+      "confidence": "low",
+      "loop": false,
+      "variant": "slow",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 44,
+      "clamped": false,
+      "rgb_thr_p30": 0.0,
+      "still_pair_frac": 0.5041,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 62,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "slow 变体每帧复制两遍，iou/rgbmov 在 0 与 1 之间交替，尾部测量不具物理意义",
+        "派生动作（slow）：帧序由源动作重排，结论应与源动作一致"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "wave_both_slow",
+      "N": 124,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 122,
+      "keep_delta_pose": 0,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 2,
+      "trim_frames": 2,
+      "trim_ratio": 0.0161,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 1.13064,
+      "d_peak": 1.28672,
+      "d_last_ratio": 0.8787,
+      "verdict": "trim",
+      "confidence": "low",
+      "loop": false,
+      "variant": "slow",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 44,
+      "clamped": false,
+      "rgb_thr_p30": 0.0,
+      "still_pair_frac": 0.5041,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": 1.0,
+      "dup_frame_pairs": 62,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 2,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 2,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "slow 变体每帧复制两遍，iou/rgbmov 在 0 与 1 之间交替，尾部测量不具物理意义",
+        "派生动作（slow）：帧序由源动作重排，结论应与源动作一致",
+        "ends_off_pose：d_last/peak=0.88 > 0.6，结尾停在偏移姿势，裁完不会回到待机"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "hug_self_pingpong",
+      "N": 122,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 117,
+      "keep_delta_pose": 5,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00107,
+      "d_peak": 0.16008,
+      "d_last_ratio": 0.0067,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": "pingpong",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 43,
+      "clamped": false,
+      "rgb_thr_p30": 7.6815,
+      "still_pair_frac": 0.0331,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 4,
+          "keep": 118
+        },
+        "iou>=0.998": {
+          "tail_len": 5,
+          "keep": 117
+        },
+        "iou>=0.995": {
+          "tail_len": 5,
+          "keep": 117
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 117
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "sleepy_nod_pingpong",
+      "N": 122,
+      "kind": "derived",
+      "keep": 122,
+      "keep_pose": 121,
+      "keep_delta_pose": 1,
+      "tail_start": 122,
+      "tail_start_frame1": 123,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.00681,
+      "d_peak": 0.37026,
+      "d_last_ratio": 0.0184,
+      "verdict": "loop-protected",
+      "confidence": "high",
+      "loop": true,
+      "variant": "pingpong",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 43,
+      "clamped": false,
+      "rgb_thr_p30": 7.2578,
+      "still_pair_frac": 0.0,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 0,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 122
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 122
+        }
+      },
+      "notes": [
+        "loop=True：尾部是循环接缝（pingpong / walk / idle），按口径 keep=N 不动"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "drink_tea_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 51,
+      "keep_delta_pose": 13,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.02695,
+      "d_peak": 0.12633,
+      "d_last_ratio": 0.2133,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 6.4155,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 2,
+          "keep": 62
+        },
+        "iou>=0.998": {
+          "tail_len": 7,
+          "keep": 57
+        },
+        "iou>=0.995": {
+          "tail_len": 10,
+          "keep": 54
+        },
+        "iou>=0.99": {
+          "tail_len": 10,
+          "keep": 54
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "headphone_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 63,
+      "keep_delta_pose": 1,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": false,
+      "continuity": "returns_to_pose",
+      "d_last": 0.13856,
+      "d_peak": 0.25495,
+      "d_last_ratio": 0.5435,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 16.1839,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.998": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.99": {
+          "tail_len": 0,
+          "keep": 64
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    },
+    {
+      "library": "expansion_v1",
+      "id": "look_down_hold",
+      "N": 64,
+      "kind": "derived",
+      "keep": 64,
+      "keep_pose": 55,
+      "keep_delta_pose": 9,
+      "tail_start": 64,
+      "tail_start_frame1": 65,
+      "tail_len": 0,
+      "trim_frames": 0,
+      "trim_ratio": 0.0,
+      "ends_off_pose": true,
+      "continuity": "ends_off_pose",
+      "d_last": 0.18569,
+      "d_peak": 0.20016,
+      "d_last_ratio": 0.9277,
+      "verdict": "no-static-tail",
+      "confidence": "high",
+      "loop": false,
+      "variant": "hold",
+      "canvas": [
+        320,
+        480
+      ],
+      "floor": 23,
+      "clamped": false,
+      "rgb_thr_p30": 6.2675,
+      "still_pair_frac": 0.0317,
+      "iou_tail_min": 1.0,
+      "rgbmov_tail": 0.0,
+      "dmed_tail": 0.0,
+      "corr_tail": -1.0,
+      "d_range_tail": 0.0,
+      "span_iou": null,
+      "dup_frame_pairs": 2,
+      "iou_sensitivity": {
+        "iou>=0.9995": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.999": {
+          "tail_len": 0,
+          "keep": 64
+        },
+        "iou>=0.998": {
+          "tail_len": 2,
+          "keep": 62
+        },
+        "iou>=0.995": {
+          "tail_len": 5,
+          "keep": 59
+        },
+        "iou>=0.99": {
+          "tail_len": 5,
+          "keep": 59
+        }
+      },
+      "notes": [
+        "派生动作（hold）：帧序由源动作重排，结论应与源动作一致",
+        "末段仍在动，测不到静止尾巴"
+      ]
+    }
+  ]
+}
