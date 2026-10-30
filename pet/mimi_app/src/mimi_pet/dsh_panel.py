@@ -41,20 +41,6 @@ QLineEdit {
     padding: 3px 2px 3px 12px;
     selection-background-color: rgba(91, 141, 239, 160);
 }
-QLabel#modeBadge {
-    background: rgba(95, 134, 237, 34);
-    border: 1px solid rgba(95, 134, 237, 105);
-    border-radius: 8px;
-    color: #4d6fc9;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 6px;
-}
-QLabel#modeBadge[mode="agent"] {
-    background: rgba(95, 211, 176, 38);
-    border-color: rgba(55, 170, 137, 120);
-    color: #2f9478;
-}
 QPushButton#sendBtn {
     background: #5f86ed; border: none; border-radius: 12px;
     color: white; font-weight: 600; font-size: 12px; padding: 4px 12px;
@@ -237,11 +223,7 @@ class DshPanel(QWidget):
         row = QHBoxLayout(self._card)
         row.setContentsMargins(4, 4, 5, 4)
         row.setSpacing(4)
-        self.mode_badge = QLabel("工作模式")
-        self.mode_badge.setObjectName("modeBadge")
-        self.mode_badge.setProperty("mode", "link")
-        self.mode_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.mode_badge.setToolTip("当前：工作模式")
+        # 模式徽章已移除：现在只有桌宠模式，徽章只会增加噪音。
         self.quick_input = _QuickInput()
         self.quick_input.setPlaceholderText("输入消息…")
         self.send_btn = QPushButton("发送")
@@ -250,7 +232,6 @@ class DshPanel(QWidget):
         send_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         send_btn.setFixedHeight(30)
         send_btn.clicked.connect(lambda: self._quick_send(self.quick_input.text()))
-        row.addWidget(self.mode_badge)
         row.addWidget(self.quick_input, 1)
         row.addWidget(send_btn)
 
@@ -270,10 +251,10 @@ class DshPanel(QWidget):
         self.quick_input.collapse_requested.connect(self.quick_input.clear)
         self.setFixedWidth(INPUT_W)
         self._relayout()
-        # --- 消息栏停用：UI 永不显示，只保留信号与 sink 方法 ---
-        self.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
-        # 移出屏幕，保证 panel.rect() 永远不会命中鼠标（qt_app 用它判断是否在交互）
-        self.move(-10000, -10000)
+        # v1.0.0 停用消息栏时在这里加了 WA_DontShowOnScreen + 移出屏幕，
+        # 于是窗口"有位置但不绘制"——正是用户看到的"能看到预留位置却不显示"。
+        # 现在恢复成正常窗口：隐藏靠 hide()，位置由 position_near/at_top 决定。
+        self.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, False)
         self.hide()
 
     # ------------------------------------------------------------------ layout
@@ -288,15 +269,32 @@ class DshPanel(QWidget):
     # ------------------------------------------------------------------ modes
 
     def show_box(self) -> None:
-        """消息栏已停用：不显示任何 UI。"""
+        """Reveal the input above the head without stealing focus.
+
+        v1.0.0 曾把它改成空实现（"消息栏已停用"），但
+        ``should_show_panel`` 仍会在悬停头顶/等待回答时返回 True，
+        ``position_panel_at_pet`` 也仍在调用它——结果就是"条件成立但什么
+        都不显示"。这里恢复真实实现，桌宠模式悬停头顶即可输入。
+        """
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+        if not self.isVisible():
+            self.show()
+        self.raise_()
 
     show_capsule = show_box  # compat alias
 
     def show_expanded(self) -> None:
-        """消息栏已停用。"""
+        """Compat alias: focus the input for typing."""
+        self.show_panel()
 
     def show_panel(self) -> None:
-        """消息栏已停用：不再弹出输入框。"""
+        """Reveal and focus the input (user-initiated: bubble/menu click)."""
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, False)
+        if not self.isVisible():
+            self.show()
+        self.raise_()
+        self.activateWindow()
+        QTimer.singleShot(0, self._focus_quick_input)
 
     def _focus_quick_input(self) -> None:
         if not self.isVisible():
@@ -343,43 +341,46 @@ class DshPanel(QWidget):
     # ------------------------------------------------------------------ position
 
     def position_at_top(self) -> None:
-        """消息栏已停用，无需定位。"""
-        return
+        """贴屏幕顶部居中（macOS 用）。
 
-    def _position_at_top_unused(self) -> None:
-        """贴屏幕顶部居中（历史实现，保留备查）。"""
+        macOS 上桌宠在屏幕底部，输入框若贴在角色头顶会盖住内容，所以放到
+        顶部当"通知条"。这里必须有真实实现，否则窗口虽然 show() 了却停在
+        (0,0) 或者上一次的位置。
+        """
         screen = QGuiApplication.screenAt(QCursor.pos()) or QGuiApplication.primaryScreen()
         if screen is None:
             return
         geo = screen.availableGeometry()
         self._anchor = None
-        w, h = self.width(), self.height()
+        w, h = self.sizeHint().width(), self.sizeHint().height()
+        w = max(w, self.width())
+        h = max(h, self.height())
         x = int(geo.center().x() - w / 2)
         y = int(geo.top() + 12)
         x = max(geo.left(), min(x, geo.right() - w))
+        self.resize(w, h)
         self.move(x, y)
 
-    def position_near(self, root_x: float, head_y: float) -> None:
-        """消息栏已停用，无需定位。"""
-        return
 
-    def _position_near_unused(self, root_x: float, head_y: float) -> None:
-        """Pin the input box just above the pet's head (历史实现，保留备查)。"""
+    def position_near(self, root_x: float, head_y: float) -> None:
+        """Pin the input box just above the pet's head（Windows/Linux）。
+
+        与 ``position_at_top`` 一样，必须是真实实现——否则输入框虽然
+        show() 了却停在 (0,0)，用户会以为"没有聊天栏"。
+        """
         self._anchor = (root_x, head_y)
-        w, h = self.width(), self.height()
+        w, h = max(self.width(), self.sizeHint().width()), max(
+            self.height(), self.sizeHint().height()
+        )
         x = int(round(root_x - w / 2.0))
         y = int(round(head_y - h - 4.0))
         screen = QGuiApplication.screenAt(QPoint(int(root_x), int(head_y)))
-        if screen is None:
-            screen = QGuiApplication.primaryScreen()
         if screen is not None:
             geo = screen.availableGeometry()
             x = max(geo.left(), min(x, geo.right() - w))
-            y = max(geo.top(), y)
-        # Only move when the position actually changed: repeated move() calls
-        # would interrupt the IME composition while typing Chinese.
-        if (x, y) != (self.x(), self.y()):
-            self.move(x, y)
+            y = max(geo.top(), min(y, geo.bottom() - h))
+        self.resize(w, h)
+        self.move(x, y)
 
     # ------------------------------------------------------------------ status
 
@@ -389,23 +390,9 @@ class DshPanel(QWidget):
     def set_activity(self, state) -> None:
         """Show the current mode explicitly and keep the input hint contextual."""
         self._state = state
-        mode = getattr(state, "mode", "link") or "link"
-        mode_name = getattr(state, "mode_display_name", "") or (
-            "桌宠模式" if mode == "agent" else "工作模式"
-        )
-        if getattr(self, "_mode_shown", None) != mode:
-            # unpolish/polish 会触发整棵样式树重算，只有模式真的变了才做。
-            self._mode_shown = mode
-            self.mode_badge.setText(mode_name)
-            self.mode_badge.setProperty("mode", mode)
-            self.mode_badge.setToolTip(f"当前：{mode_name}")
-            self.mode_badge.style().unpolish(self.mode_badge)
-            self.mode_badge.style().polish(self.mode_badge)
-        harness = getattr(state, "harness_display_name", "") or ""
+        # 只有桌宠模式，输入提示固定成一句人话即可。
         if getattr(state, "is_connected", False):
-            self._placeholder = (
-                "和 Mimi 说点什么…" if mode == "agent" else f"跟 {harness or 'DSH'} 工作…"
-            )
+            self._placeholder = "和 Mimi 说点什么…"
         else:
             self._placeholder = "未连接 DSH"
         if not self._busy:

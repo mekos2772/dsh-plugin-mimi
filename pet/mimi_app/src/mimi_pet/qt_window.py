@@ -234,13 +234,26 @@ class MimiWindow(QWidget):
     # ------------------------------------------------------------------ mouse
 
     def _visible_at(self, local_pos: QPoint) -> bool:
-        """Alpha hit test: only the visible character pixels grab the mouse."""
+        """Alpha hit test: only the visible character pixels grab the mouse.
+
+        必须把**逻辑坐标**换算成位图的**物理像素**再取样。Retina 屏上
+        ``scaled_pixmap`` 出的是 2 倍物理尺寸（256×384 窗口 → 512×768 位图），
+        而 ``toImage()`` 不会替我们缩小；直接拿逻辑坐标去 ``pixelColor`` 等于
+        只查到左上角 1/4 区域——实测 dpr=2 时点身体/脚（逻辑 128,200）取到
+        alpha=0，于是 ``mousePressEvent`` 根本没进入拖拽/点击分支，表现就是
+        "点上去完全没反应"。
+        """
         if self._pixmap is None:
             return False
         if not (0 <= local_pos.x() < self.width() and 0 <= local_pos.y() < self.height()):
             return False
         image = self._pixmap.toImage()
-        return image.pixelColor(local_pos).alpha() > 0
+        dpr = float(self._pixmap.devicePixelRatio() or 1.0)
+        px = int(local_pos.x() * dpr)
+        py = int(local_pos.y() * dpr)
+        if not (0 <= px < image.width() and 0 <= py < image.height()):
+            return False
+        return image.pixelColor(px, py).alpha() > 0
 
     def _hit_toy(self, pos) -> bool:
         """点击是否落在玩具对象上（半径内）。
@@ -767,6 +780,18 @@ class MimiWindow(QWidget):
         else:
             self._preview_outfit(outfit_id)
 
+    def _apply_engine_outfit(self, outfit) -> None:
+        """把造型交给引擎，并保证它真的换上去。
+
+        ``engine.set_outfit`` 在角色忙时只排队（坐姿循环会一直占着身体），
+        旧实现丢掉这个返回状态，于是"菜单里已经打勾、画面还是旧衣服"。
+        这里主动收口：排队的切换立刻结算。
+        """
+        if not self.engine.set_outfit(outfit):
+            return
+        if self.engine.pending_outfit is not None:
+            self.engine.apply_pending_outfit_now()
+
     def _preview_outfit(self, outfit_id: str) -> None:
         """先试穿：不改记忆，用户确认后才落盘。"""
         service = self.outfits
@@ -774,7 +799,7 @@ class MimiWindow(QWidget):
             return
         ok, message = service.preview(outfit_id)
         if ok:
-            self.engine.set_outfit(service.effective())
+            self._apply_engine_outfit(service.effective())
         if message:
             self.bubble_requested.emit(message + "\n再点一次就保存。", "companion")
 
@@ -784,7 +809,7 @@ class MimiWindow(QWidget):
             return
         ok, message = service.cancel_preview()
         if ok:
-            self.engine.set_outfit(service.effective())
+            self._apply_engine_outfit(service.effective())
         if message:
             self.bubble_requested.emit(message, "companion")
 
@@ -795,7 +820,7 @@ class MimiWindow(QWidget):
             return
         ok, message = service.select(outfit_id)
         if ok:
-            self.engine.set_outfit(service.current())
+            self._apply_engine_outfit(service.current())
         if message:
             self.bubble_requested.emit(message, "companion")
 

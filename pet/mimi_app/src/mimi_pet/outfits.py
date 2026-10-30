@@ -18,8 +18,20 @@ from pathlib import Path
 
 from .action_library import _abs_path
 from .debug_log import dbg
+from .outfit_actions import action_is_hold, fallback_candidates
 
 SCHEMA_VERSION = 1
+
+#: 拖拽受力档位：造型画了几档就按几档取，没画就退化成这三档。
+DRAG_BAND_TIERS: dict[str, str] = {
+    "hold": "t00",
+    "slow": "t00",
+    "medium": "t05",
+    "fast": "t10",
+}
+
+#: manifest 没写逐帧时长时的兜底（12fps，与动作素材的生成步长一致）。
+FALLBACK_FRAME_MS = 83
 
 
 @dataclass(frozen=True)
@@ -37,8 +49,23 @@ class OutfitSpec:
     ground_pivot: tuple[int, int]
     #: 语义动作 id → 该造型自己的帧序列。缺项表示这套衣服没有这个动作。
     action_map: dict[str, tuple[Path, ...]] = field(default_factory=dict)
-    #: 拖拽受力档位 → 该造型自己的帧。缺档时拖拽回退默认外观。
+    #: 动作 id → 逐帧时长（manifest 自带）。缺失时按 ``FALLBACK_FRAME_MS``。
+    #: 素材的生成步长并不统一（动作 step=2、拖拽 step=4），一律用 83ms 会让
+    #: 拖拽快一倍、落地从 0.8s 拖成 5s。
+    action_durations: dict[str, tuple[int, ...]] = field(default_factory=dict)
+    #: 拖拽受力档位 → 该造型自己的帧。缺档时按档位三档映射；仍然没有就由
+    #: ``drag_fallback`` 决定画什么（默认用造型自己的待机帧）。
     drag_map: dict[str, tuple[Path, ...]] = field(default_factory=dict)
+    drag_durations: dict[str, tuple[int, ...]] = field(default_factory=dict)
+    #: 拖拽完全没有素材时画什么：``"outfit"`` 用造型自己的待机帧（默认），
+    #: ``"default"`` 才允许回退默认素材（仅当这套造型外貌＝默认外貌）。
+    drag_fallback: str = "outfit"
+    #: 这套造型的拖拽素材本身画的是哪个方向的姿势。
+    #: ``"left"``  = 拖尾在右下，即"被往左拖"的姿势（大多数造型）；
+    #: ``"right"`` = 反过来（实测 sporty / star_night）；
+    #: ``"center"``/``""`` = 近乎直立，方向不重要。
+    #: 渲染时按它决定往哪边拖要镜像——固定方向会有一半造型反掉。
+    drag_face: str = ""
 
     @property
     def total_duration_ms(self) -> int:
@@ -74,6 +101,82 @@ class OutfitSpec:
     @property
     def has_drag(self) -> bool:
         return bool(self.drag_map)
+
+    @property
+    def has_dense_drag(self) -> bool:
+        """是否画满了 t00–t10 逐档受力（只有 rain_coat 是）。"""
+        return all(f"t{i:02d}" in self.drag_map for i in range(11))
+
+    def drag_tier_for(self, pose_index: int, speed_band: str) -> str:
+        """把引擎算出的连续受力档位落到这套造型真实拥有的档位上。
+
+        画满 11 档就逐档跟随（pose_index 0..10）；只画了少数几档时按
+        **整档位**取（``DRAG_BAND_TIERS``），绝不因为 pose_index 恰好等于
+        某个存在的档而忽快忽慢地跳档——那会让拖拽动画每次移动都重新 seek 回
+        第 0 帧，看着像卡住不动。
+        """
+        if not self.drag_map:
+            return ""
+        if self.has_dense_drag:
+            exact = f"t{int(pose_index):02d}"
+            if exact in self.drag_map:
+                return exact
+        for band in (speed_band, "hold"):
+            tier = DRAG_BAND_TIERS.get(band, "t00")
+            if tier in self.drag_map:
+                return tier
+        return sorted(self.drag_map)[0]
+
+    def frames_for(self, action_id: str) -> tuple[tuple[Path, ...], str] | None:
+        """解析这个动作该用本造型哪一套帧。
+
+        返回 ``(frames, 实际命中的 id)``；命中 id 与请求 id 不同表示走了近似链
+        （见 ``outfit_actions.OUTFIT_ACTION_FALLBACKS``）。一套都找不到时返回
+        ``None``——调用方按状态结算，绝不借用默认服装的帧。
+        """
+        exact = self.action_map.get(action_id)
+        if exact:
+            return exact, action_id
+        for candidate in fallback_candidates(action_id):
+            frames = self.action_map.get(candidate)
+            if frames:
+                return frames, candidate
+        return None
+
+    def action_frames_and_durations(
+        self, action_id: str
+    ) -> tuple[tuple[Path, ...], tuple[int, ...], str] | None:
+        """解析动作 → ``(frames, durations, 命中 id)``，时长直接取 manifest。
+
+        素材生成步长不统一（动作 step=2 ≈12fps、拖拽 step=4 ≈6fps），
+        统一按 83ms 播会把拖拽放快一倍。manifest 有逐帧时长时优先用它。
+        """
+        resolved = self.frames_for(action_id)
+        if resolved is None:
+            return None
+        frames, used_id = resolved
+        durations = self.action_durations.get(used_id)
+        if durations is None or len(durations) != len(frames):
+            durations = (FALLBACK_FRAME_MS,) * len(frames)
+        return frames, durations, used_id
+
+    def drag_frames_and_durations(self, tier: str) -> tuple[tuple[Path, ...], tuple[int, ...]]:
+        """拖拽档位 → ``(frames, durations)``；没有该档返回空。"""
+        frames = self.drag_map.get(tier, ())
+        if not frames:
+            return (), ()
+        durations = self.drag_durations.get(tier)
+        if durations is None or len(durations) != len(frames):
+            durations = (FALLBACK_FRAME_MS,) * len(frames)
+        return frames, durations
+
+    def holds_pose(self, action_id: str) -> bool:
+        """该动作退化到造型帧上时是否应该循环保持（坐/睡这类姿势）。"""
+        resolved = self.frames_for(action_id)
+        if resolved is None:
+            return False
+        _frames, used_id = resolved
+        return used_id == "sit_idle" and action_is_hold(action_id)
 
 
 @dataclass
@@ -151,6 +254,7 @@ class OutfitCatalog:
             if mode not in ("display", "daily"):
                 mode = "display"
             action_map: dict[str, tuple[Path, ...]] = {}
+            action_durations: dict[str, tuple[int, ...]] = {}
             for action_id, entry in (raw.get("actions") or {}).items():
                 paths = tuple(_abs_path(self.root, value) for value in entry.get("frames", []))
                 durations = tuple(int(v) for v in entry.get("duration_ms", []))
@@ -161,7 +265,10 @@ class OutfitCatalog:
                     dbg(f"outfit {raw.get('id')}/{action_id}: missing frames")
                     continue
                 action_map[str(action_id)] = paths
+                if all(value > 0 for value in durations):
+                    action_durations[str(action_id)] = durations
             drag_map: dict[str, tuple[Path, ...]] = {}
+            drag_durations: dict[str, tuple[int, ...]] = {}
             for tier, entry in (raw.get("drag") or {}).items():
                 paths = tuple(_abs_path(self.root, value) for value in entry.get("frames", []))
                 durations = tuple(int(v) for v in entry.get("duration_ms", []))
@@ -172,6 +279,8 @@ class OutfitCatalog:
                     dbg(f"outfit {raw.get('id')}/drag {tier}: missing frames")
                     continue
                 drag_map[str(tier)] = paths
+                if all(value > 0 for value in durations):
+                    drag_durations[str(tier)] = durations
             return OutfitSpec(
                 id=str(raw["id"]),
                 name_zh=str(raw.get("name_zh", raw["id"])),
@@ -183,7 +292,17 @@ class OutfitCatalog:
                 canvas=tuple(int(v) for v in raw.get("canvas", [512, 768])),
                 ground_pivot=tuple(int(v) for v in raw.get("ground_pivot", [256, 744])),
                 action_map=action_map,
+                action_durations=action_durations,
                 drag_map=drag_map,
+                drag_durations=drag_durations,
+                drag_fallback=(
+                    "default" if str(raw.get("drag_fallback", "outfit")) == "default" else "outfit"
+                ),
+                drag_face=(
+                    str(raw.get("drag_face", ""))
+                    if str(raw.get("drag_face", "")) in ("left", "right", "center")
+                    else ""
+                ),
             )
         except (KeyError, TypeError, ValueError) as exc:
             dbg(f"outfit entry rejected: {exc}")

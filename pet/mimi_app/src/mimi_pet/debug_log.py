@@ -12,10 +12,15 @@ from __future__ import annotations
 
 import atexit
 import os
+import tempfile
 import threading
 import time
 
-DEBUG_LOG_PATH = os.path.join(os.environ.get("TEMP", "."), "mimi-pet-debug.log")
+#: 不要把日志写进当前目录。Windows 有 TEMP，而 macOS/Linux 没有——旧写法
+#: ``os.environ.get("TEMP", ".")`` 于是在 macOS 上把 mimi-pet-debug.log 落到
+#: 启动目录里，测试一跑就往源码树里追加日志（连临时构造的 "ghost" 造型条目
+#: 都会被记进正式日志，排查时极具误导性）。``tempfile.gettempdir()`` 三平台都对。
+DEBUG_LOG_PATH = os.path.join(tempfile.gettempdir(), "mimi-pet-debug.log")
 
 _FLUSH_INTERVAL_S = 2.0
 _MAX_FILE_BYTES = 2 * 1024 * 1024

@@ -8,6 +8,7 @@ exclusively by the GUI adapter.
 
 from __future__ import annotations
 
+import math
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -83,6 +84,16 @@ class RenderSnapshot:
     # Hybrid drag pose loop info.
     drag_pose_set: str | None = None
     drag_pose_index: int | None = None
+    #: 造型拖拽的程序化离地高度（像素）；默认素材已有画好的悬空姿势，恒为 0。
+    drag_lift: float = 0.0
+    #: 造型拖拽的摆荡锚点（窗口坐标）；None 表示不额外旋转。
+    drag_anchor: tuple[float, float] | None = None
+    #: 造型拖拽是否水平镜像。素材只画了一套朝左倒的姿势，向右拖时不镜像
+    #: 就会"往右拖也像往左拖"。默认素材左右各有一套，恒为 False。
+    drag_mirror: bool = False
+    #: 落地时的程式化纵向压缩系数（1.0 = 原样）。造型的 land_recover 素材几乎
+    #: 不动，靠它补出"蹲下去再回弹"的观感；默认素材恒为 1.0。
+    land_squash: float = 1.0
     # One-time fixed registration scale (never per-frame alpha fit).
     registration_scale: float = 1.0
     registration_scale_y: float = 1.0
@@ -103,11 +114,72 @@ def build_snapshot(frame: EngineFrame, engine: PetEngine, display_size: tuple[in
     )
     drag_pose = frame.state is PetState.DRAGGING and frame.drag_pose_path is not None
     drag = frame.drag if frame.state is PetState.DRAGGING else None
-    # 预设造型只在待机时接管画面；走路/拖拽/落地仍用正式素材，
-    # 避免展示造型借用默认衣服的动作帧造成“换装后突然变回原样”。
-    outfit_frame = frame.outfit_frame if frame.state is PetState.IDLE else None
+    # 穿着造型时，画面只能出现这套衣服自己的帧：
+    #   1) 造型自己的动作帧（_playable_spec 已经保证只解析到造型帧）
+    #   2) 造型自己的拖拽帧
+    #   3) 造型自己的待机/保持帧（坠落、刚抓起、没有拖拽素材时用它顶住）
+    # 只有当这三样都没得画、或者根本没穿造型时，才回退默认外观的 live rig。
+    # 旧实现在这里写死 `state is IDLE`，于是坠落和"抓手第一帧"会突然变回
+    # 默认衣服——正是造型功能最想避免的观感。
+    outfit_frame = frame.outfit_frame
+    worn_look = engine.outfit is not None
+    if worn_look:
+        if full_frame and not engine.is_outfit_asset(frame.sprite.path):
+            full_frame = False
+        if drag_pose and not engine.is_outfit_asset(frame.drag_pose_path):
+            drag_pose = False
+    # 造型的"拖拽"素材其实是站姿（脚底仍在地面线上），和待机几乎一样；
+    # 默认素材才是真正画成"被拎住悬空"的。所以穿造型拖动时，画面完全没有
+    # "被抓起来"的反馈——用户以为拖拽没生效。
+    # 这里给造型拖拽补上程序化的"离地 + 摆荡"：整体抬离地面，并按水平速度
+    # 绕头顶摆动。默认素材已经有画好的姿势，保持原样不受影响。
+    # 造型落地：素材几乎不动，按播放进度补一个"触地 → 最低点 → 回弹"的压缩。
+    # 默认素材的 land_recover 本身就有 147px 的下蹲幅度，保持原样。
+    land_squash = 1.0
+    if worn_look and frame.state is PetState.LANDING and engine.player.action is not None:
+        action = engine.player.action
+        total = max(1.0, float(action.total_duration_ms))
+        progress = _clamp(engine.player.elapsed_ms / total, 0.0, 1.0)
+        # 触地即受力：默认落地素材第 2 帧就位移 91px，造型素材前 5 帧几乎为 0
+        # （实测 0,1,0,0,0），所以必须**在落地瞬间**就把压缩打到接近最低，
+        # 否则观感就是"落到地上停一会儿才蹲"。
+        if progress < 0.10:
+            dip = progress / 0.10
+            land_squash = 1.0 - 0.16 * (dip ** 0.5)      # 80ms 内压到 0.84
+        elif progress < 0.45:
+            rise = (progress - 0.10) / 0.35
+            land_squash = 0.84 + 0.05 * (rise ** 0.8)    # 轻微回弹到 0.89
+        else:
+            rise = (progress - 0.45) / 0.55
+            land_squash = 0.89 + 0.11 * min(1.0, rise ** 0.7)  # 慢慢站直
+        land_squash = _clamp(land_squash, 0.82, 1.0)
+    outfit_drag = drag_pose and worn_look
+    drag_lift = 0.0
+    drag_anchor: tuple[float, float] | None = None
+    drag_mirror = False
+    if outfit_drag:
+        display_w, display_h = display_size
+        speed_ratio = _clamp(abs(frame.vx) / 1200.0, 0.0, 1.0)
+        # 一抓住就已经离地（不依赖速度），拖动越快抬得越高。
+        drag_lift = (0.030 + 0.030 * speed_ratio) * display_h
+        # 绕头顶/头发位置摆动，像被拎着头发带走；幅度要明显可见。
+        drag_anchor = (display_w * 0.5, display_h * 0.40)
+        # 造型只画了一套拖拽图，必须按**素材实际朝向**决定镜像哪一边。
+        # 实测大多数造型是"左拖姿势"（拖尾在右下），但 sporty / star_night
+        # 画的是"右拖姿势"——固定成"往右拖就镜像"会让这两套左右反掉。
+        # drag_face 由 scripts/pipeline 测量后写进 manifest。
+        face = getattr(engine.outfit, "drag_face", "") or ""
+        if frame.vx > 0 and face == "right":
+            drag_mirror = False       # 素材本来就是右拖姿势
+        elif frame.vx < 0 and face == "right":
+            drag_mirror = True        # 往左拖才需要镜像
+        else:
+            drag_mirror = frame.vx > 0
     if frame.state is PetState.FALLING:
-        tilt = _clamp(-frame.vx / 1000.0 * 12.0, -12.0, 12.0)
+        # 造型是一张静态站姿帧，只有世界坐标在下移；给个随水平速度的倾角，
+        # 下落过程才看得出"在掉"，落地也才不会显得凭空静止。
+        scale = 20.0 if worn_look else 12.0
+        tilt = _clamp(-frame.vx / 1000.0 * scale, -scale, scale)
         hair_lag = _clamp(tilt * 0.85, -10.0, 10.0)
         skirt_lag = _clamp(tilt * 0.58, -7.0, 7.0)
     elif drag is not None:
@@ -116,11 +188,20 @@ def build_snapshot(frame: EngineFrame, engine: PetEngine, display_size: tuple[in
         skirt_lag = drag.skirt_drag_lag
     else:
         tilt = hair_lag = skirt_lag = 0.0
+    if outfit_drag:
+        # 倾角符号必须和物理一致：被拎住头顶往左移动时，身体拖在右侧
+        # （脚朝右），往右移动时脚朝左。默认素材就是这样画的（左拖时脚
+        # 相对中轴 +7.6）。用 -vx 会让脚朝相反方向，看起来"拖的方向反了"。
+        tilt = _clamp(frame.vx / 900.0 * 13.0, -13.0, 13.0)
+        # 只有单帧素材的造型（rain_coat / pajama / summer_dress / sporty /
+        # maid_blue）光靠倾角不够"活"，再叠一层绕头顶的摆动：按时间做正弦，
+        # 水平速度决定幅度。这样即使素材是一张静止图，拖起来也在荡。
+        swing = math.sin(frame.live.head_angle * 3.0) if frame.live else 0.0
+        tilt += _clamp(swing * 3.2, -3.2, 3.2)
+        hair_lag = _clamp(tilt * 0.9, -12.0, 12.0)
+        skirt_lag = _clamp(tilt * 0.6, -8.0, 8.0)
     total = len(engine.player.action.frames) if engine.player.action else None
-    if outfit_frame is not None:
-        mode, path, index = "full_frame", outfit_frame, None
-        registration_scale = registration_scale_y = 1.0
-    elif full_frame:
+    if full_frame:
         mode, path, index = "full_frame", frame.sprite.path, frame.sprite.index
         action = engine.player.action
         registration_scale = action.registration_scale if action else 1.0
@@ -130,6 +211,9 @@ def build_snapshot(frame: EngineFrame, engine: PetEngine, display_size: tuple[in
         action = engine.drag_pose_player.action
         registration_scale = action.registration_scale if action else 1.0
         registration_scale_y = action.registration_scale_y if action else 1.0
+    elif worn_look and outfit_frame is not None:
+        mode, path, index = "full_frame", outfit_frame, None
+        registration_scale = registration_scale_y = 1.0
     else:
         mode, path, index = "rig", None, None
         registration_scale = registration_scale_y = 1.0
@@ -167,6 +251,10 @@ def build_snapshot(frame: EngineFrame, engine: PetEngine, display_size: tuple[in
         root_drag_y=drag.root_drag_y if drag else 0.0,
         drag_pose_set=frame.drag_pose_set,
         drag_pose_index=index if drag_pose else None,
+        drag_lift=drag_lift,
+        drag_anchor=drag_anchor,
+        drag_mirror=drag_mirror,
+        land_squash=land_squash,
         registration_scale=registration_scale,
         registration_scale_y=registration_scale_y,
         bubble_text=frame.bubble_text,
@@ -235,6 +323,31 @@ class QtRenderer:
         self._layer_pixmaps: dict[str, QPixmap] = {}
         self._head_pixmaps: dict[tuple[float, float], QPixmap] = {}
 
+
+    # ------------------------------------------------------------- canvas
+
+    def _new_canvas(self) -> QImage:
+        """新建一张与显示尺寸一致、但按物理像素分配的透明画布。
+
+        关键点：**必须带上 devicePixelRatio**。缓存里的帧是 ``dpr=2`` 的
+        512×768 位图；如果这里按逻辑尺寸 256×384、dpr=1 建画布，落地时
+        画出来就会被放大插值——待机清晰、落地发糊，观感上就是"抽搐/抖动"。
+        """
+        dpr = float(getattr(self.cache, "dpr", 1.0) or 1.0)
+        canvas = QImage(
+            max(1, int(round(self.display_w * dpr))),
+            max(1, int(round(self.display_h * dpr))),
+            QImage.Format.Format_ARGB32_Premultiplied,
+        )
+        canvas.setDevicePixelRatio(dpr)
+        canvas.fill(Qt.GlobalColor.transparent)
+        return canvas
+
+    def _finish_canvas(self, canvas: QImage) -> QPixmap:
+        pixmap = QPixmap.fromImage(canvas)
+        pixmap.setDevicePixelRatio(float(canvas.devicePixelRatio() or 1.0))
+        return pixmap
+
     # ------------------------------------------------------------------ API
 
     def render(self, snapshot: RenderSnapshot) -> QPixmap:
@@ -250,30 +363,46 @@ class QtRenderer:
         The scale is authored in the manifest (e.g. land_recover was
         generated ~9% larger than the rest) and applied about the ground
         pivot; nothing here is recomputed from alpha bounding boxes.
+
+        造型的 ``land_recover`` 素材几乎不动（帧间差异 4–5，垂直位移 14–19px），
+        而默认落地素材是 22.5 / 147px。落在地面上时如果只有那套"站着"的帧，
+        观感就是"掉下去以后没动作"。这里按落地进度叠一个程式化的下蹲-回弹，
+        只对造型落地生效，默认素材不受影响。
         """
         pixmap = self.cache.scaled_pixmap(snapshot.frame_path, QSize(self.display_w, self.display_h))
         scale_x = snapshot.registration_scale
         scale_y = snapshot.registration_scale_y
-        if abs(scale_x - 1.0) < 1e-6 and abs(scale_y - 1.0) < 1e-6:
+        squash = snapshot.land_squash
+        if (
+            abs(scale_x - 1.0) < 1e-6
+            and abs(scale_y - 1.0) < 1e-6
+            and abs(squash - 1.0) < 1e-6
+        ):
             return pixmap
         pivot_x, pivot_y = snapshot.pivot_display
-        canvas = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
-        canvas.fill(Qt.GlobalColor.transparent)
+        canvas = self._new_canvas()
         with _painting(canvas) as painter:
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
             transform = QTransform()
+            # 以脚底为锚点：纵向压缩时脚不离地；下落时绕脚底小幅倾斜，
+            # 让"正在掉"有可见迹象（造型只有一张站姿帧，不倾斜就像静止悬停）。
             transform.translate(pivot_x, pivot_y)
-            transform.scale(scale_x, scale_y)
+            if snapshot.body_tilt:
+                transform.rotate(snapshot.body_tilt)
+            transform.scale(scale_x, scale_y * squash)
             transform.translate(-pivot_x, -pivot_y)
             painter.setTransform(transform)
             painter.drawPixmap(0, 0, pixmap)
-        return QPixmap.fromImage(canvas)
+        return self._finish_canvas(canvas)
 
     def _render_drag_pose(self, snapshot: RenderSnapshot) -> QPixmap:
         """Hybrid drag: the approved pose frame plus program micro-tune.
 
         v13 frames already share one fixed top pickup anchor. The tiny residual
         rotation is applied around that same point; frames are never fitted.
+
+        造型拖拽（``drag_anchor`` 非空）走另一条路：素材是站姿，必须程序化
+        抬离地面并绕头顶摆荡，否则拖动时画面和站着一样，像是没反应。
         """
         pixmap = self.cache.scaled_pixmap(snapshot.frame_path, QSize(self.display_w, self.display_h))
         scale_x = snapshot.registration_scale
@@ -283,23 +412,32 @@ class QtRenderer:
             and abs(scale_y - 1.0) < 1e-6
             and not snapshot.body_tilt
             and not snapshot.root_drag_x
+            and not snapshot.drag_lift
+            and not snapshot.drag_mirror
         ):
             return pixmap
-        canvas = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
-        canvas.fill(Qt.GlobalColor.transparent)
+        canvas = self._new_canvas()
         with _painting(canvas) as painter:
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-            pickup_x = 256.0 * self.display_w / 512.0
-            pickup_y = 80.0 * self.display_h / 768.0
+            if snapshot.drag_anchor is not None:
+                anchor_x, anchor_y = snapshot.drag_anchor
+            else:
+                anchor_x = 256.0 * self.display_w / 512.0
+                anchor_y = 80.0 * self.display_h / 768.0
             transform = QTransform()
-            transform.translate(pickup_x, pickup_y)
+            transform.translate(anchor_x, anchor_y)
             transform.scale(scale_x, scale_y)
             transform.rotate(snapshot.body_tilt)
-            transform.translate(-pickup_x, -pickup_y)
-            transform.translate(snapshot.root_drag_x, 0.0)
+            transform.translate(-anchor_x, -anchor_y)
+            transform.translate(snapshot.root_drag_x, -snapshot.drag_lift)
+            if snapshot.drag_mirror:
+                # 以窗口中线为轴水平镜像：人物朝右倒，头发往左甩，
+                # 和"被往右拖"一致。只影响造型拖拽，默认素材左右各有一套。
+                transform.translate(self.display_w, 0.0)
+                transform.scale(-1.0, 1.0)
             painter.setTransform(transform)
             painter.drawPixmap(0, 0, pixmap)
-        return QPixmap.fromImage(canvas)
+        return self._finish_canvas(canvas)
 
     def _layer_pixmap(self, layer_name: str, file: Path) -> QPixmap:
         key = f"{layer_name}:{file}"
@@ -312,8 +450,7 @@ class QtRenderer:
     # ------------------------------------------------------------------ rig
 
     def _render_rig(self, snapshot: RenderSnapshot) -> QPixmap:
-        canvas = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
-        canvas.fill(Qt.GlobalColor.transparent)
+        canvas = self._new_canvas()
         # Resolve everything the layers need BEFORE opening the painting
         # transaction, so a failure here cannot leave a painter behind.
         breathe = snapshot.body_breathe
@@ -353,18 +490,18 @@ class QtRenderer:
                     click_squash=click_squash,
                 )
 
-        pixmap = QPixmap.fromImage(canvas)
+        pixmap = self._finish_canvas(canvas)
         # Root spring offset: the character sways inside the fixed window.
         # The vertical spring is suppressed while dragging: without vertical
         # drag assets the character must keep one fixed height (no crouch
         # bobbing from mouse Y jitter).
         root_drag_y = 0.0 if snapshot.state == "DRAGGING" else snapshot.root_drag_y
         if snapshot.root_drag_x or root_drag_y:
-            shifted = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
+            shifted = self._new_canvas()
             shifted.fill(Qt.GlobalColor.transparent)
             with _painting(shifted) as p2:
                 p2.drawImage(QPointF(snapshot.root_drag_x, root_drag_y), canvas)
-            pixmap = QPixmap.fromImage(shifted)
+            pixmap = self._finish_canvas(shifted)
         return pixmap
 
     def _master_expression_file(self, expression: str) -> Path | None:
@@ -432,21 +569,19 @@ class QtRenderer:
         clip = self._layer_pixmap("eye_clip", tracking.clip_file)
         foreground = self._layer_pixmap("eye_foreground", tracking.foreground_file)
 
-        moved = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
-        moved.fill(Qt.GlobalColor.transparent)
+        moved = self._new_canvas()
         with _painting(moved) as eye_painter:
             eye_painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
             eye_painter.drawPixmap(QPointF(dx, dy), irises)
             eye_painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_DestinationIn)
             eye_painter.drawPixmap(0, 0, clip)
 
-        composed = QImage(self.display_w, self.display_h, QImage.Format.Format_ARGB32_Premultiplied)
-        composed.fill(Qt.GlobalColor.transparent)
+        composed = self._new_canvas()
         with _painting(composed) as painter:
             painter.drawPixmap(0, 0, base)
             painter.drawImage(0, 0, moved)
             painter.drawPixmap(0, 0, foreground)
-        result = QPixmap.fromImage(composed)
+        result = self._finish_canvas(composed)
         self._head_pixmaps[key] = result
         return result
 

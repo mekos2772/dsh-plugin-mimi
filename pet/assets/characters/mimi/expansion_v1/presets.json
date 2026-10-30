@@ -2818,7 +2818,8 @@
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     },
     {
       "id": "school_uniform",
@@ -5723,7 +5724,8 @@
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     },
     {
       "id": "winter_scarf",
@@ -8558,7 +8560,8 @@
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     },
     {
       "id": "rain_coat",
@@ -11097,93 +11100,204 @@
       "drag": {
         "t00": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t00/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t00/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t00/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t00/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t00/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t00/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t00/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t01": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t01/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t01/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t01/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t01/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t01/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t01/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t01/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t02": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t02/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t02/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t02/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t02/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t02/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t02/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t02/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t03": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t03/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t03/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t03/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t03/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t03/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t03/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t03/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t04": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t04/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t04/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t04/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t04/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t04/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t04/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t04/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t05": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t05/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t05/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t05/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t05/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t05/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t05/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t05/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t06": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t06/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t06/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t06/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t06/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t06/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t06/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t06/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t07": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t07/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t07/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t07/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t07/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t07/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t07/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t07/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t08": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t08/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t08/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t08/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t08/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t08/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t08/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t08/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t09": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t09/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t09/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t09/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t09/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t09/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t09/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t09/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t10": {
           "frames": [
-            "../expansion_v1/presets/rain_coat/drag/t10/frames/0001.webp"
+            "../expansion_v1/presets/rain_coat/drag/t10/frames/0001.webp",
+            "../expansion_v1/presets/rain_coat/drag/t10/frames/0002.webp",
+            "../expansion_v1/presets/rain_coat/drag/t10/frames/0003.webp",
+            "../expansion_v1/presets/rain_coat/drag/t10/frames/0004.webp",
+            "../expansion_v1/presets/rain_coat/drag/t10/frames/0005.webp",
+            "../expansion_v1/presets/rain_coat/drag/t10/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         }
-      }
+      },
+      "drag_face": "left"
     },
     {
       "id": "pajama",
@@ -13806,31 +13920,62 @@
       "drag": {
         "t00": {
           "frames": [
-            "../expansion_v1/presets/pajama/drag/t00/frames/0001.webp"
+            "../expansion_v1/presets/pajama/drag/t00/frames/0001.webp",
+            "../expansion_v1/presets/pajama/drag/t00/frames/0002.webp",
+            "../expansion_v1/presets/pajama/drag/t00/frames/0003.webp",
+            "../expansion_v1/presets/pajama/drag/t00/frames/0004.webp",
+            "../expansion_v1/presets/pajama/drag/t00/frames/0005.webp",
+            "../expansion_v1/presets/pajama/drag/t00/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t05": {
           "frames": [
-            "../expansion_v1/presets/pajama/drag/t05/frames/0001.webp"
+            "../expansion_v1/presets/pajama/drag/t05/frames/0001.webp",
+            "../expansion_v1/presets/pajama/drag/t05/frames/0002.webp",
+            "../expansion_v1/presets/pajama/drag/t05/frames/0003.webp",
+            "../expansion_v1/presets/pajama/drag/t05/frames/0004.webp",
+            "../expansion_v1/presets/pajama/drag/t05/frames/0005.webp",
+            "../expansion_v1/presets/pajama/drag/t05/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t10": {
           "frames": [
-            "../expansion_v1/presets/pajama/drag/t10/frames/0001.webp"
+            "../expansion_v1/presets/pajama/drag/t10/frames/0001.webp",
+            "../expansion_v1/presets/pajama/drag/t10/frames/0002.webp",
+            "../expansion_v1/presets/pajama/drag/t10/frames/0003.webp",
+            "../expansion_v1/presets/pajama/drag/t10/frames/0004.webp",
+            "../expansion_v1/presets/pajama/drag/t10/frames/0005.webp",
+            "../expansion_v1/presets/pajama/drag/t10/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     },
     {
       "id": "summer_dress",
@@ -16339,31 +16484,62 @@
       "drag": {
         "t00": {
           "frames": [
-            "../expansion_v1/presets/summer_dress/drag/t00/frames/0001.webp"
+            "../expansion_v1/presets/summer_dress/drag/t00/frames/0001.webp",
+            "../expansion_v1/presets/summer_dress/drag/t00/frames/0002.webp",
+            "../expansion_v1/presets/summer_dress/drag/t00/frames/0003.webp",
+            "../expansion_v1/presets/summer_dress/drag/t00/frames/0004.webp",
+            "../expansion_v1/presets/summer_dress/drag/t00/frames/0005.webp",
+            "../expansion_v1/presets/summer_dress/drag/t00/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t05": {
           "frames": [
-            "../expansion_v1/presets/summer_dress/drag/t05/frames/0001.webp"
+            "../expansion_v1/presets/summer_dress/drag/t05/frames/0001.webp",
+            "../expansion_v1/presets/summer_dress/drag/t05/frames/0002.webp",
+            "../expansion_v1/presets/summer_dress/drag/t05/frames/0003.webp",
+            "../expansion_v1/presets/summer_dress/drag/t05/frames/0004.webp",
+            "../expansion_v1/presets/summer_dress/drag/t05/frames/0005.webp",
+            "../expansion_v1/presets/summer_dress/drag/t05/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t10": {
           "frames": [
-            "../expansion_v1/presets/summer_dress/drag/t10/frames/0001.webp"
+            "../expansion_v1/presets/summer_dress/drag/t10/frames/0001.webp",
+            "../expansion_v1/presets/summer_dress/drag/t10/frames/0002.webp",
+            "../expansion_v1/presets/summer_dress/drag/t10/frames/0003.webp",
+            "../expansion_v1/presets/summer_dress/drag/t10/frames/0004.webp",
+            "../expansion_v1/presets/summer_dress/drag/t10/frames/0005.webp",
+            "../expansion_v1/presets/summer_dress/drag/t10/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     },
     {
       "id": "festive_red",
@@ -19268,7 +19444,8 @@
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     },
     {
       "id": "sporty",
@@ -21817,29 +21994,60 @@
       "drag": {
         "t00": {
           "frames": [
-            "../expansion_v1/presets/sporty/drag/t00/frames/0001.webp"
+            "../expansion_v1/presets/sporty/drag/t00/frames/0001.webp",
+            "../expansion_v1/presets/sporty/drag/t00/frames/0002.webp",
+            "../expansion_v1/presets/sporty/drag/t00/frames/0003.webp",
+            "../expansion_v1/presets/sporty/drag/t00/frames/0004.webp",
+            "../expansion_v1/presets/sporty/drag/t00/frames/0005.webp",
+            "../expansion_v1/presets/sporty/drag/t00/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t05": {
           "frames": [
-            "../expansion_v1/presets/sporty/drag/t05/frames/0001.webp"
+            "../expansion_v1/presets/sporty/drag/t05/frames/0001.webp",
+            "../expansion_v1/presets/sporty/drag/t05/frames/0002.webp",
+            "../expansion_v1/presets/sporty/drag/t05/frames/0003.webp",
+            "../expansion_v1/presets/sporty/drag/t05/frames/0004.webp",
+            "../expansion_v1/presets/sporty/drag/t05/frames/0005.webp",
+            "../expansion_v1/presets/sporty/drag/t05/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         },
         "t10": {
           "frames": [
-            "../expansion_v1/presets/sporty/drag/t10/frames/0001.webp"
+            "../expansion_v1/presets/sporty/drag/t10/frames/0001.webp",
+            "../expansion_v1/presets/sporty/drag/t10/frames/0002.webp",
+            "../expansion_v1/presets/sporty/drag/t10/frames/0003.webp",
+            "../expansion_v1/presets/sporty/drag/t10/frames/0004.webp",
+            "../expansion_v1/presets/sporty/drag/t10/frames/0005.webp",
+            "../expansion_v1/presets/sporty/drag/t10/frames/0006.webp"
           ],
           "duration_ms": [
-            34
+            83,
+            83,
+            83,
+            83,
+            83,
+            83
           ]
         }
-      }
+      },
+      "drag_face": "right"
     },
     {
       "id": "maid_blue",
@@ -27368,7 +27576,8 @@
         }
       },
       "source": "generated/expansion_v1/video_model",
-      "runtime_codec": "webp_q95_alpha"
+      "runtime_codec": "webp_q95_alpha",
+      "drag_face": "left"
     }
   ]
 }

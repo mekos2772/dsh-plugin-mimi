@@ -178,11 +178,14 @@ def run() -> int:
     companion.actions.hub = hub
 
     def _action_exists(action_id: str) -> bool:
-        try:
-            library.get(action_id)
-            return True
-        except KeyError:
-            return False
+        """这个动作现在**真的**能播吗（含当前造型的近似链）。
+
+        以前只查动作库，于是穿着造型时：
+        * 主动行为/健康卡会挑到造型根本播不出来的动作 → 白等一轮、动作静默消失；
+        * 造型独占的动作（clap / shy / tilt_head / land_recover）反而被判成不存在。
+        引擎的 ``can_play`` 才是同一个问题的正确口径。
+        """
+        return engine.can_play(action_id)
 
     # 让健康卡在派生动作缺失时能回退到原始动作。
     hub._action_checker = _action_exists
@@ -455,12 +458,9 @@ def run() -> int:
             return
         if panel.quick_input.hasFocus():
             return  # never move the window mid-IME-composition
-        if sys.platform == "darwin":
-            # macOS：面板贴屏幕顶部居中。桌宠在底部，弹在头顶会盖住内容，
-            # 顶部更像一个"通知条"。
-            panel.position_at_top()
-        else:
-            panel.position_near(engine.root_x, pet_head_y())
+        # 一律贴在桌宠头顶（v1.0.0 曾把 macOS 改成贴屏幕顶部，
+        # 用户期望的是"在 Mimi 头上"，所以这里不再区分平台）。
+        panel.position_near(engine.root_x, pet_head_y())
         interacting = panel.rect().contains(panel.mapFromGlobal(QCursor.pos()))
         if integration.should_show_panel(
             head_hovered=head_hovered[0],
@@ -825,12 +825,18 @@ def run() -> int:
             available=_action_exists,
         )
 
-        # 一步演完回到待机 → 交给导演排下一步
+        # 一步演完回到待机 → 交给导演排下一步。
+        # 这里必须每个待机 tick 都问一次导演：旧实现只在 busy_until 是无穷大
+        # 时通知一次，而 notify_idle 之后 busy_until 变成有限值、current 仍然
+        # 非空，于是下面那行 return 永远挡住下一步——每套主动行为都只演第一步
+        # 就停住（47 套里 33 套因此完全看不到）。
         if director.state.current is not None and engine.states.state is _State.IDLE:
             if director.state.busy_until == float("inf"):
                 director.notify_idle(now_s)
 
-        if engine.states.state is not _State.IDLE or director.state.current is not None:
+        if engine.states.state is not _State.IDLE:
+            return
+        if director.state.current is not None and now_s < director.state.busy_until:
             return
         action = director.next_action(now_s, ctx)
         if not action:
@@ -838,7 +844,8 @@ def run() -> int:
         if _execute_step(action, rect):
             director.notify_action_started(now_s)
         else:
-            # 动作库没有这个动作 / 走不了：让导演跳过这一步，不要卡住。
+            # 这一步在这套衣服上播不出来：让导演立刻跳过它，别把整套路停住。
+            director.state.busy_until = now_s
             director.notify_idle(now_s)
 
     def _boot_greeting() -> None:

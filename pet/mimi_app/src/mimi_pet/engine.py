@@ -64,6 +64,19 @@ MOVEMENT_ACTIONS = frozenset({"walk_left", "walk_right"})
 #: 扩展素材统一帧时长（24fps 抽隔帧后回放为 12fps）。
 FRAME_MS = 83
 
+#: 落地动作的最长播放时长。LANDING 期间 is_busy_physical() 会拒绝所有交互，
+#: 素材再多也必须在这个时间内播完，否则用户会觉得"掉下来之后卡住不动"。
+LANDING_MAX_MS = 900.0
+
+
+def _shrink_durations(durations: tuple[int, ...], limit_ms: float) -> tuple[int, ...]:
+    """把一串逐帧时长整体压到 ``limit_ms`` 以内（保持相对节奏）。"""
+    total = sum(durations)
+    if total <= limit_ms or total <= 0:
+        return durations
+    factor = limit_ms / total
+    return tuple(max(1, int(round(value * factor))) for value in durations)
+
 
 @dataclass(frozen=True)
 class EngineFrame:
@@ -111,6 +124,8 @@ class PetEngine:
         self._pending_outfit = None
         self._outfit_index = 0
         self._outfit_elapsed_ms = 0.0
+        #: 当前造型拥有的全部图路径；渲染层用它阻止"表演时混入默认素材"。
+        self._outfit_assets: frozenset = frozenset()
         live_cfg = config["live"]
         self.live = LiveController(
             LiveConfig(
@@ -323,9 +338,10 @@ class PetEngine:
     def set_outfit(self, outfit) -> bool:
         """Switch the display look.
 
-        ``None`` restores the default appearance. Display-only looks have an
-        idle loop and no walk/drag assets, so the engine refuses to walk while
-        one is active instead of borrowing the default outfit's frames.
+        ``None`` restores the default appearance. A worn outfit owns every
+        visible frame: actions it lacks are served from its own semantic
+        fallbacks (``outfit_actions``) instead of the default skin, so the
+        character never changes clothes mid-interaction.
         """
         # 正在表演/拖拽/下落时不硬切造型：排队到回到待机再换。
         # 直接丢弃会出现"设置里已保存新造型、画面却永远还是旧的"。
@@ -333,10 +349,33 @@ class PetEngine:
             self._pending_outfit = outfit
             return True
         self._pending_outfit = None
+        self._activate_outfit(outfit)
+        return True
+
+    def _activate_outfit(self, outfit) -> None:
         self._outfit = outfit
         self._outfit_index = 0
         self._outfit_elapsed_ms = 0.0
-        return True
+        # 渲染层要能判断"这张图是不是这套衣服的"，否则没法阻止
+        # PERFORMING 期间误用默认素材的帧。
+        self._outfit_assets = self._collect_outfit_assets(outfit)
+
+    @staticmethod
+    def _collect_outfit_assets(outfit) -> frozenset:
+        if outfit is None:
+            return frozenset()
+        paths: set[Path] = set(outfit.frames)
+        for frames in outfit.action_map.values():
+            paths.update(frames)
+        for frames in outfit.drag_map.values():
+            paths.update(frames)
+        return frozenset(paths)
+
+    def is_outfit_asset(self, path) -> bool:
+        """这张图属于当前这套衣服吗（穿造型时的渲染守卫）。"""
+        if path is None:
+            return False
+        return path in getattr(self, "_outfit_assets", frozenset())
 
     def _flush_pending_outfit(self) -> None:
         """回到待机时补上排队中的造型切换。"""
@@ -344,25 +383,56 @@ class PetEngine:
             return
         if self.states.state is not PetState.IDLE:
             return
-        self._outfit = self._pending_outfit
+        self._activate_outfit(self._pending_outfit)
         self._pending_outfit = None
-        self._outfit_index = 0
-        self._outfit_elapsed_ms = 0.0
 
     @property
     def outfit(self):
         return self._outfit
+
+    @property
+    def pending_outfit(self):
+        """排队中、等回到待机才生效的造型（None 表示没有排队）。"""
+        return self._pending_outfit
+
+    def apply_pending_outfit_now(self) -> bool:
+        """立刻应用排队中的造型切换。
+
+        菜单里换完衣服却因为角色正坐着（``sit_idle`` 是循环动作）永远回不到
+        待机，是很典型的"设置里换了、画面没换"。这里给界面一个明确的收口：
+        先结算当前动作回到待机，再应用造型。
+        """
+        if self._pending_outfit is None:
+            return False
+        if self.states.state is not PetState.IDLE:
+            if self.is_busy_physical():
+                return False
+            self.player.stop()
+            self.drag_pose_player.stop()
+            self._clear_movement()
+            self._waking = False
+            self.states.dispatch(Event.ACTION_FINISHED)
+            if self.states.state is PetState.SLEEPING:
+                self.states.dispatch(Event.WAKE)
+            if self.states.state is not PetState.IDLE:
+                return False
+        self._activate_outfit(self._pending_outfit)
+        self._pending_outfit = None
+        return True
 
     def _advance_outfit(self, dt_s: float):
         """Advance the display loop; returns the current frame path or None."""
         outfit = self._outfit
         if outfit is None or not outfit.frames:
             return None
-        if self.states.state not in (PetState.IDLE, PetState.PERFORMING):
-            return outfit.frames[min(self._outfit_index, len(outfit.frames) - 1)]
         if self.states.state is PetState.PERFORMING:
-            # 表演用的是正式素材，避免混穿两套衣服。
+            # 表演用的是造型自己的动作帧（_playable_spec 保证），
+            # 不要再叠一层待机循环帧。
             return None
+        if self.states.state is not PetState.IDLE:
+            # 坠落/拖拽/落地/睡眠：没有专属动作帧时用当前造型帧顶住，
+            # 绝不回退默认外观（那会"掉下去就换了个人"）。
+            return outfit.frames[min(self._outfit_index, len(outfit.frames) - 1)]
         self._outfit_elapsed_ms += dt_s * 1000.0
         current = outfit.duration_ms[min(self._outfit_index, len(outfit.duration_ms) - 1)]
         while self._outfit_elapsed_ms >= current:
@@ -377,33 +447,42 @@ class PetEngine:
     def outfit_action_frames(self, action_id: str):
         """Return this outfit's own frames for ``action_id``.
 
-        ``None`` 表示这套衣服没有该动作。此时展示造型不借用默认服装的帧，
-        而是留在待机；日常套装必须补上必要动作才允许标记为 daily。
+        缺这个动作时沿语义近似链退到这套衣服的另一个动作（见
+        ``outfit_actions.OUTFIT_ACTION_FALLBACKS``）；一套都没有才返回
+        ``None``。任何情况下都不借用默认服装的帧。
         """
         outfit = self._outfit
         if outfit is None:
             return None
-        return outfit.action_map.get(action_id)
+        resolved = outfit.frames_for(action_id)
+        return resolved[0] if resolved else None
 
     def _outfit_spec(self, action_id: str) -> ActionSpec | None:
         """Build a playable spec from this outfit's own frames.
 
-        缺这个动作时返回 ``None``，由调用方决定是留待机还是明确报不可用，
-        绝不退回默认服装的帧（那会出现“换装后突然变回原衣服”）。
+        造型没有这个动作时，沿语义近似链退到它自己拥有的另一个动作；连近似
+        都没有才返回 ``None``，由调用方决定怎么结算。绝不退回默认服装的帧
+        （那会出现“换装后突然变回原衣服”）。
         """
         outfit = self._outfit
         if outfit is None:
             return None
-        frames = outfit.action_map.get(action_id)
-        if not frames:
+        resolved = outfit.action_frames_and_durations(action_id)
+        if resolved is None:
             return None
+        frames, durations, used_id = resolved
+        loop = used_id in MOVEMENT_ACTIONS or outfit.holds_pose(action_id)
+        # 落地动作必须短：LANDING 会拒绝一切交互（is_busy_physical），
+        # 造型的 land_recover 有 40+ 帧，按 83ms 播就是 3.5 秒的"点了没反应"。
+        if used_id == "land_recover" or action_id == "land_recover":
+            durations = _shrink_durations(durations, LANDING_MAX_MS)
         return ActionSpec(
             id=action_id,
             name_zh=action_id,
-            description=f"{outfit.name_zh} / {action_id}",
+            description=f"{outfit.name_zh} / {used_id}",
             frames=frames,
-            duration_ms=(FRAME_MS,) * len(frames),
-            loop=action_id in MOVEMENT_ACTIONS,
+            duration_ms=durations,
+            loop=loop,
             trigger="interaction",
             exit_state="idle",
             canvas=outfit.canvas,
@@ -417,14 +496,25 @@ class PetEngine:
     def _playable_spec(self, action_id: str) -> ActionSpec | None:
         """本动作该用哪套帧：穿着造型时只认造型自己的帧。
 
-        以前这里是 ``self._outfit_spec(action_id) or self._action(action_id)``，
+        历史：这里一度是 ``self._outfit_spec(action_id) or self._action(action_id)``，
         即造型缺这个动作时偷偷退回默认服装的帧——画面上就是"换着睡衣却在
-        挥手时衣 suddenly 变回原衣服"。素材里任何造型都不该这样。
-        现在改为：穿着造型且它没有这个动作时明确拒绝，让调用方保持待机。
+        挥手时突然变回原衣服"。之后改成"缺就拒绝"，结果 87 个动作里有 76 个
+        在换装后彻底失效（摸肚子、击掌、喂食、拖文件、坐下、玩具、DSH 思考
+        动画全部没反应）。
+        现在的规则：造型缺这个动作时沿语义近似链退到**这套衣服自己**的另一
+        个动作，既不变回原衣服，也保证每个交互都有反馈。
         """
         if self._outfit is not None:
             return self._outfit_spec(action_id)
         return self._action(action_id)
+
+    def can_play(self, action_id: str) -> bool:
+        """这套衣服现在能不能播这个动作（含近似链）。
+
+        供主动行为/健康卡等"要不要挑这个动作"的判断使用：以前它们问的是
+        动作库（``library.get``），换装后会挑到根本播不出来的动作，白等一轮。
+        """
+        return self._playable_spec(action_id) is not None
 
     def perform(self, action_id: str) -> bool:
         """Play an action from Idle only (scheduler path)."""
@@ -541,9 +631,12 @@ class PetEngine:
             and self.player.action is not None
             and self.player.action.id in ("sit_down", "sit_idle")
         ):
-            spec = self._action("stand_up")
+            spec = self._playable_spec("stand_up")
             if spec is None:
-                return False
+                # 造型没有起身素材：直接把身体交还待机，姿势自然收掉。
+                self.player.stop()
+                self.states.dispatch(Event.ACTION_FINISHED)
+                return True
             self.player.play(spec)
             return True
         return False
@@ -551,7 +644,7 @@ class PetEngine:
     def start_sleep(self) -> bool:
         if self.states.state is not PetState.IDLE:
             return False
-        spec = self._action("sleep_lie_down")
+        spec = self._playable_spec("sleep_lie_down")
         if spec is None:
             return False
         self._clear_movement()
@@ -566,7 +659,7 @@ class PetEngine:
         # Resolve before latching ``_waking``: the flag is what gates this
         # method, so setting it for an action that cannot play would leave the
         # pet asleep for good.
-        spec = self._action("wake_up")
+        spec = self._playable_spec("wake_up")
         if spec is None:
             return False
         self._waking = True
@@ -780,14 +873,21 @@ class PetEngine:
             direction = output.direction if output.direction in ("left", "right") else (
                 self._last_horizontal_direction or "right"
             )
-        if pose_set != self._current_pose_set:
-            # Record the set first so a missing one is not retried on every
-            # mouse move (each retry would log); the current pose stays on
-            # screen, and the drag still works.
-            self._current_pose_set = pose_set
-            spec = self._outfit_drag_spec(direction, output)
-            if spec is not None:
-                self.drag_pose_player.play(spec)
+        # Resolve the pose source for this force sample. An outfit owns the
+        # pose, so the identity used for "did the tier change?" must be the
+        # resolved spec id — comparing the raw pose_index would re-seek the
+        # same looping clip on every mouse move and freeze the animation.
+        spec = self._outfit_drag_spec(direction, output)
+        if spec is None:
+            key = pose_set
+            spec_or_none = None
+        else:
+            key = spec.id
+            spec_or_none = spec
+        if key != self._current_pose_set:
+            self._current_pose_set = key
+            if spec_or_none is not None:
+                self.drag_pose_player.play(spec_or_none)
             else:
                 try:
                     self.drag_pose_player.play(self.library.drag_pose(pose_set))
@@ -798,34 +898,34 @@ class PetEngine:
     def _outfit_drag_spec(self, direction: str, output):
         """按当前造型的受力档位图构造拖拽姿势。
 
-        档位优先精确匹配：引擎已经算出 0..pose_count-1 的连续 ``pose_index``，
-        造型若提供了该档（t00–t10）就直接用，拖拽会像默认素材一样逐档加力。
-        造型只有 3 档时退化成 hold→t00 / medium→t05 / fast→t10。
-        造型一档都没有就返回 None，由调用方回退正式素材——这比让角色在拖拽中
-        突然换衣服更好，因为拖拽姿势本来就只画受力，不显示正面。
+        档位选择交给 ``OutfitSpec.drag_tier_for``：画满 11 档的造型逐档跟随
+        真实受力；只画了 3 档（或少于 3 档）的造型按整档位取，拖起来是稳定
+        的三段式，而不是每次移动都跳档。
+        造型一档都没画时也不借用默认服装的帧——那会"拖到一半突然换衣服"，
+        改用造型自己的待机帧（除非 manifest 明确声明 drag_fallback=default）。
         """
         outfit = self._outfit
-        if outfit is None or not outfit.has_drag:
+        if outfit is None:
             return None
         band = getattr(output, "speed_band", "")
         pose_index = getattr(output, "pose_index", 0)
-        tier = None
-        # 1) 精确档位：造型画到了这一档就用它
-        exact = f"t{int(pose_index):02d}"
-        if outfit.drag_frames(exact):
-            tier = exact
-        # 2) 退化到三档
-        if tier is None:
-            tier = {"hold": "t00", "medium": "t05", "fast": "t10"}.get(band, "t00")
-        frames = outfit.drag_frames(tier)
+        tier = outfit.drag_tier_for(int(pose_index), str(band))
+        frames, durations = outfit.drag_frames_and_durations(tier) if tier else ((), ())
+        if not frames and outfit.drag_fallback != "default":
+            # 没有拖拽素材：画自己的待机帧，保持同一套衣服。
+            frames = outfit.frames
+            durations = outfit.duration_ms
+            tier = tier or "idle"
         if not frames:
             return None
+        if not durations or len(durations) != len(frames):
+            durations = (FRAME_MS,) * len(frames)
         return ActionSpec(
             id=f"drag_{direction}_{tier}",
             name_zh="拖拽",
             description=f"{outfit.name_zh} / {tier}",
             frames=frames,
-            duration_ms=(FRAME_MS,) * len(frames),
+            duration_ms=durations,
             loop=True,
             trigger="drag",
             exit_state="idle",
@@ -1019,15 +1119,19 @@ class PetEngine:
         return "landing"
 
     def _play_landing(self) -> None:
-        """Play the shared landing action, or settle straight to Idle without it.
+        """Play the landing action, or settle straight to Idle without it.
 
         LANDING is only left when that action reports finished, so a manifest
         missing it would park the pet mid-landing forever. The no-animation
         settle matches the free-placement release above.
         """
-        # 造型有自己的一套落地帧就用它；没有就退回正式素材的落地动作，
-        # 但如果两样都没有，必须直接结算，否则 LANDING 永远等不到完成事件。
-        spec = self._outfit_spec("land_recover") or self._action("land_recover_v4_12")
+        # 穿造型时只认造型自己的落地帧（含近似），绝不借用默认素材；
+        # 没穿造型时才用正式素材的落地动作。两样都没有必须直接结算，
+        # 否则 LANDING 永远等不到完成事件。
+        if self._outfit is not None:
+            spec = self._outfit_spec("land_recover")
+        else:
+            spec = self._action("land_recover_v4_12")
         if spec is None:
             self.states.dispatch(Event.ACTION_FINISHED)
             return
@@ -1182,11 +1286,11 @@ class PetEngine:
             follow_up: ActionSpec | None = None
             settled = False
             if finished_action == "sit_down":
-                follow_up = self._action("sit_idle")
+                follow_up = self._playable_spec("sit_idle")
             elif self.states.state is PetState.SLEEPING and finished_action in (
                 "sleep_lie_down",
             ):
-                follow_up = self._action("sleep_loop")
+                follow_up = self._playable_spec("sleep_loop")
             elif self.states.state is PetState.SLEEPING and finished_action == "wake_up":
                 self.player.stop()
                 self._waking = False
