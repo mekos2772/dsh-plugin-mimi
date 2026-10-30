@@ -93,6 +93,14 @@ python -X utf8 tools/smoke_companion.py
 
 详细使用和验证边界在仓库的 `docs/MIMI_COMPANION_FEATURES.md` 与 `reports/companion-20260914/VALIDATION.md`。本轮真实接口验证不等同于全部模型、多项目和系统休眠场景均已验证。
 
+## 发布与规划
+
+| 文档 | 内容 |
+|---|---|
+| [`CHANGELOG.md`](CHANGELOG.md) | 逐版本用户可见变更 |
+| [`docs/RELEASE-1.1.0.md`](docs/RELEASE-1.1.0.md) | 1.1.0 发布说明：七个缺陷的成因、修复与验证数据 |
+| [`docs/PLAN-ASSET-SPLIT.md`](docs/PLAN-ASSET-SPLIT.md) | **下一步**：素材拆包计划（当前包 198.9 MB，上限 200 MB） |
+
 ## 许可
 
 MIT
