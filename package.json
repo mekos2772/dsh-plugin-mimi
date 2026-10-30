@@ -21,7 +21,10 @@
     "!pet/assets/characters/mimi/library_v1/candidates/**",
     "!pet/mimi_app/config/agent_session.json",
     "!**/__pycache__/**",
-    "!**/.pytest_cache/**"
+    "!**/.pytest_cache/**",
+    "!pet/assets/characters/mimi/.trimmed/**",
+    "!**/*.log",
+    "!pet/mimi_app/tests/**"
   ],
   "dsh": {
     "bundle": {
